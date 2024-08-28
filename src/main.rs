@@ -12,6 +12,7 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 static mut CURRENT_HEADING_LEVEL: usize = 0;
 static mut CONTENT_INDENT_LEVEL: usize = 0;
+static mut LIST_STACK: Vec<usize> = Vec::new();
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -213,20 +214,36 @@ fn render_table(node: &Value) -> io::Result<()> {
 }
 
 fn render_list(node: &Value) -> io::Result<()> {
+    unsafe {
+        LIST_STACK.push(0);
+    }
     render_children(node)?;
+    unsafe {
+        LIST_STACK.pop();
+    }
     Ok(())
 }
 
 fn render_list_item(node: &Value) -> io::Result<()> {
-    print!("{}* ", get_indent());
     unsafe {
+        if let Some(last) = LIST_STACK.last_mut() {
+            *last += 1;
+            print!("{}{:2}. ", get_indent(), *last);
+        } else {
+            print!("{}* ", get_indent());
+        }
         CONTENT_INDENT_LEVEL += 1;
     }
     render_children(node)?;
+    println!(); // Add a newline after each list item
     unsafe {
         CONTENT_INDENT_LEVEL -= 1;
     }
     Ok(())
+}
+
+fn get_indent() -> String {
+    unsafe { "  ".repeat(CONTENT_INDENT_LEVEL + LIST_STACK.len()) }
 }
 
 fn render_blockquote(node: &Value) -> io::Result<()> {
@@ -251,15 +268,24 @@ fn render_thematic_break() -> io::Result<()> {
 
 fn render_link(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let url = node["url"].as_str().unwrap_or("");
+
+    // Start OSC 8 hyperlink
+    print!("\x1B]8;;{}\x1B\\", url);
+
     stdout.set_color(
         ColorSpec::new()
             .set_fg(Some(Color::Blue))
             .set_underline(true),
     )?;
-    print!("[");
+
     render_children(node)?;
-    print!("]({})", node["url"].as_str().unwrap_or(""));
+
     stdout.reset()?;
+
+    // End OSC 8 hyperlink
+    print!("\x1B]8;;\x1B\\");
+
     Ok(())
 }
 
@@ -300,8 +326,4 @@ fn render_children(node: &Value) -> io::Result<()> {
 
 fn get_heading_indent(level: usize) -> String {
     "  ".repeat(level - 1)
-}
-
-fn get_indent() -> String {
-    unsafe { "  ".repeat(CONTENT_INDENT_LEVEL) }
 }
