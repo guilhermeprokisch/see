@@ -143,6 +143,7 @@ fn render_code(node: &Value) -> io::Result<()> {
         }
         stdout.reset()?;
     }
+    println!();
 
     Ok(())
 }
@@ -208,13 +209,11 @@ fn render_table(node: &Value) -> io::Result<()> {
         }
     }
 
-    println!();
     Ok(())
 }
 
 fn render_list(node: &Value) -> io::Result<()> {
     render_children(node)?;
-    println!();
     Ok(())
 }
 
@@ -242,7 +241,6 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
         CONTENT_INDENT_LEVEL -= 1;
     }
     stdout.reset()?;
-    println!();
     Ok(())
 }
 
