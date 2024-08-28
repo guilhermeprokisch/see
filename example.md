@@ -1,232 +1,117 @@
----
-__Advertisement :)__
+# GitHub Markdown Example
 
-- __[pica](https://nodeca.github.io/pica/demo/)__ - high quality and fast image
-resize in browser.
-- __[babelfish](https://github.com/nodeca/babelfish/)__ - developer friendly
-i18n with plurals support and easy syntax.
+This is an example of a GitHub Markdown file showcasing various features.
 
-You will like those projects!
----
+## Headers
 
-# h1 Heading 8-)
+# H1
 
-## h2 Heading
+## H2
 
-### h3 Heading
+### H3
 
-#### h4 Heading
+#### H4
 
-##### h5 Heading
+##### H5
 
-###### h6 Heading
-
-## Horizontal Rules
-
----
-
----
-
----
-
-## Typographic replacements
-
-Enable typographer option to see result.
-
-(c) (C) (r) (R) (tm) (TM) (p) (P) +-
-
-test.. test... test..... test?..... test!....
-
-!!!!!! ???? ,, -- ---
-
-"Smartypants, double quotes" and 'single quotes'
+###### H6
 
 ## Emphasis
 
-**This is bold text**
+*Italic*
+_Italic_
 
-**This is bold text**
+**Bold**
+__Bold__
 
-_This is italic text_
-
-_This is italic text_
+***Bold and Italic***
+___Bold and Italic___
 
 ~~Strikethrough~~
 
-## Blockquotes
-
-> Blockquotes can also be nested...
->
-> > ...by using additional greater-than signs right next to each other...
-> >
-> > > ...or with spaces between arrows.
-
 ## Lists
 
-Unordered
+### Unordered List
 
-- Create a list by starting a line with `+`, `-`, or `*`
-- Sub-lists are made by indenting 2 spaces:
-  - Marker character change forces new list start:
-    - Ac tristique libero volutpat at
-    * Facilisis in pretium nisl aliquet
-    - Nulla volutpat aliquam velit
-- Very easy!
+- Item 1
+- Item 2
+  - Subitem 1
+  - Subitem 2
+- Item 3
 
-Ordered
+### Ordered List
 
-1. Lorem ipsum dolor sit amet
-2. Consectetur adipiscing elit
-3. Integer molestie lorem at massa
+1. First item
+2. Second item
+3. Third item
+   1. Indented item
+   2. Indented item
+4. Fourth item
 
-4. You can use sequential numbers...
-5. ...or keep all the numbers as `1.`
+## Links
 
-Start numbering with offset:
+[Inline-style link](https://www.example.com)
 
-57. foo
-1. bar
+[Inline-style link with title](https://www.example.com "Link title")
+
+[Reference-style link][example]
+
+[example]: https://www.example.com
+
+## Images
+
+![Alt text](example.jpg)
+
+![Alt text](example.jpg "Image title")
 
 ## Code
 
-Inline `code`
+Inline `code` has `back-ticks` around it.
 
-Indented code
-
-    // Some comments
-    line 1 of code
-    line 2 of code
-    line 3 of code
-
-Block code "fences"
-
-```
-Sample text here...
+```javascript
+var s = "JavaScript syntax highlighting";
+alert(s);
 ```
 
-Syntax highlighting
-
-```js
-var foo = function (bar) {
-  return bar++;
-};
-
-console.log(foo(5));
+```python
+def function(arg):
+    print("Python syntax highlighting")
 ```
 
 ## Tables
 
-| Option | Description                                                               |
-| ------ | ------------------------------------------------------------------------- |
-| data   | path to data files to supply the data that will be passed into templates. |
-| engine | engine to be used for processing templates. Handlebars is the default.    |
-| ext    | extension to be used for dest files.                                      |
+| Column 1      | Column 2      | Column 3      |
+| ------------- | ------------- | ------------- |
+| Row 1, Cell 1 | Row 1, Cell 2 | Row 1, Cell 3 |
+| Row 2, Cell 1 | Row 2, Cell 2 | Row 2, Cell 3 |
 
-Right aligned columns
+## Blockquotes
 
-| Option |                                                               Description |
-| -----: | ------------------------------------------------------------------------: |
-|   data | path to data files to supply the data that will be passed into templates. |
-| engine |    engine to be used for processing templates. Handlebars is the default. |
-|    ext |                                      extension to be used for dest files. |
+> This is a blockquote.
+> It can span multiple lines.
 
-## Links
+## Horizontal Rule
 
-[link text](http://dev.nodeca.com)
+---
 
-[link with title](http://nodeca.github.io/pica/demo/ "title text!")
+## Task Lists
 
-Autoconverted link https://github.com/nodeca/pica (enable linkify to see)
+- [x] Completed task
+- [ ] Incomplete task
+  - [ ] Subtask 1
+  - [x] Subtask 2
 
-## Images
+## Emojis
 
-![Minion](https://octodex.github.com/images/minion.png)
-![Stormtroopocat](https://octodex.github.com/images/stormtroopocat.jpg "The Stormtroopocat")
+:smile: :+1: :rocket: :metal:
 
-Like links, Images also have a footnote style syntax
+## Mentioning users and issues
 
-![Alt text][id]
+@username
+#1234
 
-With a reference later in the document defining the URL location:
+## Footnotes
 
-[id]: https://octodex.github.com/images/dojocat.jpg "The Dojocat"
+This is some text with a footnote.[^1]
 
-## Plugins
-
-The killer feature of `markdown-it` is very effective support of
-[syntax plugins](https://www.npmjs.org/browse/keyword/markdown-it-plugin).
-
-### [Emojies](https://github.com/markdown-it/markdown-it-emoji)
-
-> Classic markup: :wink: :cry: :laughing: :yum:
->
-> Shortcuts (emoticons): :-) :-( 8-) ;)
-
-see [how to change output](https://github.com/markdown-it/markdown-it-emoji#change-output) with twemoji.
-
-### [Subscript](https://github.com/markdown-it/markdown-it-sub) / [Superscript](https://github.com/markdown-it/markdown-it-sup)
-
-- 19^th^
-- H~2~O
-
-### [\<ins>](https://github.com/markdown-it/markdown-it-ins)
-
-++Inserted text++
-
-### [\<mark>](https://github.com/markdown-it/markdown-it-mark)
-
-==Marked text==
-
-### [Footnotes](https://github.com/markdown-it/markdown-it-footnote)
-
-Footnote 1 link[^first].
-
-Footnote 2 link[^second].
-
-Inline footnote^[Text of inline footnote] definition.
-
-Duplicated footnote reference[^second].
-
-[^first]: Footnote **can have markup**
-
-    and multiple paragraphs.
-
-[^second]: Footnote text.
-
-### [Definition lists](https://github.com/markdown-it/markdown-it-deflist)
-
-Term 1
-
-: Definition 1
-with lazy continuation.
-
-Term 2 with _inline markup_
-
-: Definition 2
-
-        { some code, part of Definition 2 }
-
-    Third paragraph of definition 2.
-
-_Compact style:_
-
-Term 1
-~ Definition 1
-
-Term 2
-~ Definition 2a
-~ Definition 2b
-
-### [Abbreviations](https://github.com/markdown-it/markdown-it-abbr)
-
-This is HTML abbreviation example.
-
-It converts "HTML", but keep intact partial entries like "xxxHTMLyyy" and so on.
-
-\*[HTML]: Hyper Text Markup Language
-
-### [Custom containers](https://github.com/markdown-it/markdown-it-container)
-
-::: warning
-_here be dragons_
-:::
+[^1]: This is the footnote.
