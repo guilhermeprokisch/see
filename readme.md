@@ -56,8 +56,6 @@ In this example, create a Markdown file at `~/.mycli/help.md` with your CLI docu
 
 This approach allows you to maintain a single source of documentation that's readable in raw form, rendered nicely in the terminal, and viewable in web browsers.
 
-[The rest of the README remains unchanged...]
-
 ## Installation
 
 There are two ways to install smd:
