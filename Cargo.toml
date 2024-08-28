@@ -3,6 +3,12 @@ name = "smd"
 version = "0.1.0"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
+description = "A minimalistic  Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering"
+license = "MIT"
+repository = "https://github.com/guilhermeprokisch/smd"
+readme = "README.md"
+keywords = ["markdown", "terminal", "renderer", "syntax-highlighting", "emoji"]
+categories = ["command-line-utilities", "text-processing"]
 
 
 [dependencies]
