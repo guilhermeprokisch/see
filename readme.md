@@ -40,7 +40,7 @@ To use smd, simply pass the path to a Markdown file as an argument:
 smd path/to/your/markdown_file.md
 ```
 
-### Integration with CLI Tools
+#### Integration with CLI Tools
 
 smd can be easily integrated with CLI tools to replace traditional man pages with rich Markdown documentation. Here's an example of how you can use smd with a custom CLI tool's --help flag:
 
@@ -108,14 +108,6 @@ If you prefer to build from source or want to contribute to the project:
 
 Now you can use `smd` from anywhere in your terminal.
 
-## Usage
-
-To use smd, simply pass the path to a Markdown file as an argument:
-
-```bash
-smd path/to/your/markdown_file.md
-```
-
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. As this project is in alpha, your input and contributions can significantly shape its development.
@@ -128,9 +120,15 @@ As this is an alpha version, you may encounter bugs or incomplete features. Some
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Acknowledgements
+## Goals
 
-This project was inspired by the need for a simple, yet feature-rich Markdown viewer for the terminal.
+1. Extended Markdown Support: Create plugin system for custom extensions
+
+2. Theming and Customization: Develop user-customizable color schemes
+
+3. Enhanced Image Rendering: Implement ASCII art fallback for text-only terminals
+
+4. Self-Documentation: Create smd's own documentation using smd
 
 ## Author
 
