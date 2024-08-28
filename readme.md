@@ -61,6 +61,9 @@ fi
 
 In this example, create a Markdown file at `~/.mycli/help.md` with your CLI documentation. When users run `mycli --help`, they'll see a beautifully rendered version of your Markdown documentation instead of a plain text man page.
 
+<img width="1482" alt="image" src="https://github.com/user-attachments/assets/9b97388e-64d6-4d48-b1a8-614a209f32ee">
+
+
 This approach allows you to maintain a single source of documentation that's readable in raw form, rendered nicely in the terminal, and viewable in web browsers.
 
 ## Installation
