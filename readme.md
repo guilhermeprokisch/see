@@ -2,7 +2,16 @@
 
 **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
-smd is a command-line tool that renders Markdown files with rich formatting in your terminal. It provides a visually appealing way to view Markdown content directly in your console, complete with syntax highlighting, emojis, and image support.
+smd is a minimalistic Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering. It provides a visually appealing way to view Markdown content directly in your console.
+
+## Motivation
+
+The primary goal of smd is to create CLI documentation in Markdown that can be rendered both in the terminal and viewed in a web browser. This dual-format approach aims to:
+
+1. Provide a unified documentation format accessible across different environments
+2. Enable quick viewing of rich documentation directly in the terminal
+
+As the project evolved, support for more complex Markdown features was added. This expansion opens up possibilities for integration with other documentation tools and workflows, potentially enhancing its utility in diverse development ecosystems.
 
 ## Features
 
@@ -16,41 +25,88 @@ smd is a command-line tool that renders Markdown files with rich formatting in y
 - Nested list support
 - Blockquote styling
 
+## Usage
+
+To use smd, simply pass the path to a Markdown file as an argument:
+
+```bash
+smd path/to/your/markdown_file.md
+```
+
+### Integration with CLI Tools
+
+smd can be easily integrated with CLI tools to replace traditional man pages with rich Markdown documentation. Here's an example of how you can use smd with a custom CLI tool's --help flag:
+
+```bash
+#!/bin/bash
+
+# Name: mycli
+# Description: Example CLI tool using smd for documentation
+
+if [[ "$1" == "--help" ]]; then
+    # Use smd to render the Markdown help file
+    smd ~/.mycli/help.md
+else
+    # Regular CLI functionality
+    echo "Running mycli with arguments: $@"
+fi
+```
+
+In this example, create a Markdown file at `~/.mycli/help.md` with your CLI documentation. When users run `mycli --help`, they'll see a beautifully rendered version of your Markdown documentation instead of a plain text man page.
+
+This approach allows you to maintain a single source of documentation that's readable in raw form, rendered nicely in the terminal, and viewable in web browsers.
+
+[The rest of the README remains unchanged...]
+
 ## Installation
 
-To install smd, you need to have Rust and Cargo installed on your system. If you don't have them, you can install them from [https://rustup.rs/](https://rustup.rs/).
+There are two ways to install smd:
 
-Once you have Rust set up, clone this repository and build the project:
+### 1. Using Cargo (Recommended)
 
+The easiest way to install smd is directly from crates.io using Cargo:
+
+```bash
+cargo install smd
 ```
-git clone https://github.com/yourusername/smd.git
-cd smd
-cargo build --release
-```
 
-The compiled binary will be available in `target/release/smd`.
+This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
+
+### 2. Building from Source
+
+If you prefer to build from source or want to contribute to the project:
+
+1. Ensure you have Rust and Cargo installed. If not, get them from [https://rustup.rs/](https://rustup.rs/).
+
+2. Clone the repository:
+
+   ```bash
+   git clone https://github.com/guilhermeprokisch/smd.git
+   cd smd
+   ```
+
+3. Build the project:
+
+   ```bash
+   cargo build --release
+   ```
+
+4. The compiled binary will be available in `target/release/smd`.
+
+5. Optionally, add the binary to your PATH or move it to a directory in your PATH:
+   ```bash
+   sudo mv target/release/smd /usr/local/bin/
+   ```
+
+Now you can use `smd` from anywhere in your terminal.
 
 ## Usage
 
 To use smd, simply pass the path to a Markdown file as an argument:
 
+```bash
+smd path/to/your/markdown_file.md
 ```
-./smd path/to/your/markdown_file.md
-```
-
-## Dependencies
-
-smd relies on several Rust crates to provide its functionality:
-
-- `markdown`: For parsing Markdown
-- `syntect`: For syntax highlighting
-- `termcolor`: For terminal color output
-- `viuer`: For image rendering in the terminal
-- `emojis`: For emoji support
-- `reqwest`: For downloading images from URLs
-- `serde_json`: For JSON parsing
-- `sha2`: For generating file hashes
-- And more (see Cargo.toml for a full list)
 
 ## Contributing
 
@@ -60,12 +116,18 @@ Contributions are welcome! Please feel free to submit a Pull Request. As this pr
 
 As this is an alpha version, you may encounter bugs or incomplete features. Some known limitations include:
 
-[List any known issues or limitations here]
-
 ## License
 
-[Insert your chosen license here]
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgements
 
 This project was inspired by the need for a simple, yet feature-rich Markdown viewer for the terminal.
+
+## Author
+
+Guilherme Prokisch <guilherme.prokisch@gmail.com>
+
+## Repository
+
+https://github.com/guilhermeprokisch/smd
