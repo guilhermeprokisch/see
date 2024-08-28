@@ -52,11 +52,53 @@ fn main() -> io::Result<()> {
     IMAGE_FOLDER.set(image_folder).unwrap();
 
     let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
-    let json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
+    let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
+
+    modify_heading_ast(&mut json);
+    modify_list_item_ast(&mut json);
 
     render_markdown(&json)?;
 
     Ok(())
+}
+
+fn modify_list_item_ast(node: &mut Value) {
+    if node["type"] == "listItem" {
+        if let Some(children) = node["children"].as_array_mut() {
+            if children.len() == 1 && children[0]["type"] == "paragraph" {
+                // Replace the listItem's children with the paragraph's children
+                node["children"] = children[0]["children"].clone();
+            }
+        }
+    }
+
+    // Recursively modify children
+    if let Some(children) = node["children"].as_array_mut() {
+        for child in children {
+            modify_list_item_ast(child);
+        }
+    }
+}
+
+fn modify_heading_ast(node: &mut Value) {
+    if node["type"] == "heading" {
+        if let Some(children) = node["children"].as_array_mut() {
+            if let Some(last_child) = children.last_mut() {
+                if last_child["type"] == "text" {
+                    if let Some(text) = last_child["value"].as_str() {
+                        last_child["value"] = Value::String(format!("{}:", text));
+                    }
+                }
+            }
+        }
+    }
+
+    // Recursively modify children
+    if let Some(children) = node["children"].as_array_mut() {
+        for child in children {
+            modify_heading_ast(child);
+        }
+    }
 }
 
 fn render_markdown(ast: &Value) -> io::Result<()> {
@@ -109,6 +151,8 @@ fn render_heading(node: &Value) -> io::Result<()> {
         1 => Color::Cyan,
         2 => Color::Green,
         3 => Color::Yellow,
+        4 => Color::Blue,
+        5 => Color::Magenta,
         _ => Color::White,
     };
 
@@ -278,8 +322,6 @@ fn render_list(node: &Value) -> io::Result<()> {
     Ok(())
 }
 
-// TODO: Solve thee bug of the first subitem identation. Maybe there should be some inconsistency
-// in the ast
 fn render_list_item(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
 
@@ -293,11 +335,11 @@ fn render_list_item(node: &Value) -> io::Result<()> {
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))?;
                 print!("{:2}. ", *index);
             } else {
-                stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+                stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
                 print!("• ");
             }
         } else {
-            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
             print!("• ");
         }
         stdout.reset()?;
@@ -311,7 +353,7 @@ fn render_list_item(node: &Value) -> io::Result<()> {
         CONTENT_INDENT_LEVEL += 1;
     }
 
-    render_list_item_content(node)?;
+    render_children(node)?;
 
     unsafe {
         CONTENT_INDENT_LEVEL -= 1;
@@ -326,38 +368,12 @@ fn render_task_list_item_checkbox(checked: bool) -> io::Result<()> {
 
     if checked {
         stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
-        print!("[x] ");
+        print!("  ");
     } else {
         stdout.set_color(ColorSpec::new().set_fg(Some(Color::Red)))?;
-        print!("[ ] ");
+        print!("  ");
     }
     stdout.reset()?;
-    Ok(())
-}
-
-fn render_list_item_content(node: &Value) -> io::Result<()> {
-    if let Some(children) = node["children"].as_array() {
-        for (i, child) in children.iter().enumerate() {
-            if i > 0 {
-                println!();
-                print!("{}", get_indent());
-            }
-
-            if child["type"] == "paragraph" {
-                // Render paragraph children directly
-                if let Some(paragraph_children) = child["children"].as_array() {
-                    for (j, paragraph_child) in paragraph_children.iter().enumerate() {
-                        if j > 0 {
-                            print!(" ");
-                        }
-                        render_node(paragraph_child)?;
-                    }
-                }
-            } else {
-                render_node(child)?;
-            }
-        }
-    }
     Ok(())
 }
 
@@ -497,24 +513,33 @@ fn render_strong(node: &Value) -> io::Result<()> {
 }
 
 fn render_delete(node: &Value) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_strikethrough(true))?;
-    render_children(node)?;
-    stdout.reset()?;
+    if let Some(children) = node["children"].as_array() {
+        for child in children {
+            if child["type"] == "text" {
+                if let Some(text) = child["value"].as_str() {
+                    for c in text.chars() {
+                        print!("{}\u{0336}", c);
+                    }
+                }
+            } else {
+                render_node(child)?;
+            }
+        }
+    }
     Ok(())
 }
 
 fn render_inline_code(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))?;
-    print!("`{}`", node["value"].as_str().unwrap_or(""));
+    print!(" `{}` ", node["value"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
 }
 
 fn render_footnote_reference(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)).set_bold(true))?;
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)).set_bold(true))?;
     print!("[^{}]", node["identifier"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
@@ -534,7 +559,7 @@ fn render_image_reference(node: &Value) -> io::Result<()> {
 
 fn render_definition(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
     println!(
         "{}[{}]: {}",
         get_indent(),

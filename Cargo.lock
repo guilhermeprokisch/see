@@ -1016,27 +1016,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "md-terminal-renderer"
-version = "0.1.0"
-dependencies = [
- "crossterm 0.28.1",
- "emojis",
- "image 0.25.2",
- "markdown",
- "reqwest",
- "serde",
- "serde_json",
- "sha2",
- "syntect",
- "term_size",
- "termcolor",
- "terminal_size",
- "textwrap",
- "url",
- "viuer",
-]
-
-[[package]]
 name = "memchr"
 version = "2.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1926,6 +1905,27 @@ name = "smawk"
 version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
+
+[[package]]
+name = "smd"
+version = "0.1.0"
+dependencies = [
+ "crossterm 0.28.1",
+ "emojis",
+ "image 0.25.2",
+ "markdown",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "sha2",
+ "syntect",
+ "term_size",
+ "termcolor",
+ "terminal_size",
+ "textwrap",
+ "url",
+ "viuer",
+]
 
 [[package]]
 name = "socket2"
