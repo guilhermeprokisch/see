@@ -1,5 +1,9 @@
 # smd (Simple Markdown Viewer)
 
+<img width="1496" alt="image" src="https://github.com/user-attachments/assets/db0d2d72-33ba-43cd-9e4a-c71dfb90ccff">
+
+<img width="1496" alt="image" src="https://github.com/user-attachments/assets/73972c28-fc26-4570-ac5e-b2564556e2c5">
+
 **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
 smd is a minimalistic Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering. It provides a visually appealing way to view Markdown content directly in your console.
