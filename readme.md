@@ -1,8 +1,11 @@
 # smd (Simple Markdown Viewer)
 
-<img width="1496" alt="image" src="https://github.com/user-attachments/assets/db0d2d72-33ba-43cd-9e4a-c71dfb90ccff">
+<img width="1482" alt="image" src="https://github.com/user-attachments/assets/9ead893a-e3b2-4b0f-9945-e751ff67d3ef">
+<img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
 
-<img width="1496" alt="image" src="https://github.com/user-attachments/assets/73972c28-fc26-4570-ac5e-b2564556e2c5">
+
+
+
 
 **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
