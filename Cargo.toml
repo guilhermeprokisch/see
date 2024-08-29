@@ -1,6 +1,6 @@
 [package]
 name = "smd"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/smd"
@@ -65,4 +65,3 @@ install-path = "CARGO_HOME"
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = true
-include = ["docs/main.md"]
