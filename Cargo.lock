@@ -1913,6 +1913,7 @@ dependencies = [
  "crossterm 0.28.1",
  "emojis",
  "image 0.25.2",
+ "lazy_static",
  "markdown",
  "reqwest",
  "serde",

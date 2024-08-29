@@ -1,6 +1,9 @@
+extern crate lazy_static;
 use reqwest::blocking::Client;
+use serde_json::json;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io::Write;
@@ -8,6 +11,7 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Mutex;
 use std::sync::OnceLock;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
@@ -25,6 +29,11 @@ static mut ORDERED_LIST_STACK: Vec<bool> = Vec::new();
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
 static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
 static NO_IMAGES: AtomicBool = AtomicBool::new(false);
+
+// Global storage for link definitions
+lazy_static::lazy_static! {
+    static ref LINK_DEFINITIONS: Mutex<HashMap<String, (String, Option<String>)>> = Mutex::new(HashMap::new());
+}
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
@@ -67,10 +76,14 @@ fn main() -> io::Result<()> {
     let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
     let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
 
+    process_definitions(&json);
     modify_heading_ast(&mut json);
     modify_list_item_ast(&mut json);
 
     render_markdown(&json)?;
+
+    // Clear link definitions after rendering
+    LINK_DEFINITIONS.lock().unwrap().clear();
 
     Ok(())
 }
@@ -96,6 +109,7 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("footnoteReference") => render_footnote_reference(node)?,
         Some("imageReference") => render_image_reference(node)?,
         Some("definition") => render_definition(node)?,
+        Some("linkReference") => render_link_reference(node)?,
         _ => {
             if DEBUG_MODE.load(Ordering::Relaxed) {
                 println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
@@ -145,7 +159,8 @@ fn modify_heading_ast(node: &mut Value) {
 }
 
 fn render_markdown(ast: &Value) -> io::Result<()> {
-    render_node(ast)
+    render_node(ast)?;
+    Ok(())
 }
 
 fn render_children(node: &Value) -> io::Result<()> {
@@ -578,22 +593,6 @@ fn render_image_reference(node: &Value) -> io::Result<()> {
     Ok(())
 }
 
-fn render_definition(node: &Value) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)))?;
-    println!(
-        "{}[{}]: {}",
-        get_indent(),
-        node["identifier"].as_str().unwrap_or(""),
-        node["url"].as_str().unwrap_or("")
-    );
-    if let Some(title) = node["title"].as_str() {
-        println!("{}  \"{}\"", get_indent(), title);
-    }
-    stdout.reset()?;
-    Ok(())
-}
-
 fn get_heading_indent(level: usize) -> String {
     "  ".repeat(level - 1)
 }
@@ -611,6 +610,50 @@ fn render_help() -> io::Result<()> {
     }
 
     Command::new(env::current_exe()?).arg(help_path).status()?;
+
+    Ok(())
+}
+
+fn process_definitions(node: &Value) {
+    if let Some("definition") = node["type"].as_str() {
+        render_definition(node).unwrap();
+    }
+
+    if let Some(children) = node["children"].as_array() {
+        for child in children {
+            process_definitions(child);
+        }
+    }
+}
+
+fn render_link_reference(node: &Value) -> io::Result<()> {
+    let identifier = node["identifier"].as_str().unwrap_or("");
+    let definitions = LINK_DEFINITIONS.lock().unwrap();
+
+    if let Some((url, title)) = definitions.get(identifier) {
+        // Create a temporary link node
+        let link_node = json!({
+            "type": "link",
+            "url": url,
+            "title": title,
+            "children": node["children"].clone()
+        });
+
+        // Render as a regular link
+        render_link(&link_node)
+    } else {
+        // If definition is not found, render as plain text
+        render_children(node)
+    }
+}
+
+fn render_definition(node: &Value) -> io::Result<()> {
+    let identifier = node["identifier"].as_str().unwrap_or("");
+    let url = node["url"].as_str().unwrap_or("");
+    let title = node["title"].as_str().map(|s| s.to_string());
+
+    let mut definitions = LINK_DEFINITIONS.lock().unwrap();
+    definitions.insert(identifier.to_string(), (url.to_string(), title));
 
     Ok(())
 }
