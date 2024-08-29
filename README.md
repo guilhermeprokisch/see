@@ -20,21 +20,47 @@ As the project evolved, support for more complex Markdown features was added. Th
 
 - Rich text rendering in the terminal
 - Syntax highlighting for code blocks
-- Emoji support
+- Emoji support :smile:
 - Image rendering (when possible)
 - Clickable links (in supported terminals)
 - Table formatting
 - Task list rendering
 - Nested list support
 - Blockquote styling
+- And more adding soon!
 
 ## Usage
 
-To use smd, simply pass the path to a Markdown file as an argument:
+There are two main ways to use smd:
+
+### 1. Rendering a Markdown file
+
+To render a Markdown file, simply pass the path to the file as an argument:
 
 ```bash
 smd path/to/your/markdown_file.md
 ```
+
+### 2. Rendering Markdown from piped input
+
+smd can also read Markdown content from standard input, allowing you to pipe content directly into it:
+
+```bash
+echo "# Hello, *world*!" | smd
+```
+
+This feature is particularly useful for integrating smd with other commands or for quickly rendering Markdown snippets. For example:
+
+```bash
+cat README.md | smd  # Render a file's content
+curl -sL https://raw.githubusercontent.com/guilhermeprokisch/smd/master/README.md | smd  # Render a remote Markdown file
+```
+
+### Additional Options
+
+- `--debug`: Enable debug mode to see more information about the parsing process.
+- `--no-images`: Disable image rendering and display alt text instead.
+- `--help`: Display the help documentation.
 
 #### Integration with CLI Tools
 
@@ -61,13 +87,23 @@ In this example, create a Markdown file at `~/.mycli/help.md` with your CLI docu
 
 This approach allows you to maintain a single source of documentation that's readable in raw form, rendered nicely in the terminal, and viewable in web browsers.
 
+#### Viewing smd's Own Documentation
+
+smd uses itself to display its own documentation. You can view smd's documentation directly in your terminal by running:
+
+```bash
+smd --help
+```
+
+This command will render smd's main documentation file `/docs`, giving you a practical example of smd in action and providing detailed information about its usage and features.
+
 ## Installation
 
-There are two ways to install smd:
+There are several ways to install smd:
 
 ### 1. Using Cargo (Recommended)
 
-The easiest way to install smd is directly from crates.io using Cargo:
+You can install smd directly from crates.io using Cargo:
 
 ```bash
 cargo install smd
@@ -75,7 +111,25 @@ cargo install smd
 
 This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
 
-### 2. Building from Source
+### 2. Install prebuilt binaries via shell script
+
+You can quickly install smd using our shell script:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.0/smd-installer.sh | sh
+```
+
+**DISCLAIMER: The version number in the URL above (v0.2.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
+
+### 3. Install prebuilt binaries via Homebrew
+
+If you're using Homebrew, you can install smd with:
+
+```sh
+brew install guilhermeprokisch/smd/smd
+```
+
+### 4. Building from Source
 
 If you prefer to build from source or want to contribute to the project:
 
@@ -88,20 +142,13 @@ If you prefer to build from source or want to contribute to the project:
    cd smd
    ```
 
-3. Build the project:
+3. Build and install the project using Cargo:
 
    ```bash
-   cargo build --release
+   cargo install --path .
    ```
 
-4. The compiled binary will be available in `target/release/smd`.
-
-5. Optionally, add the binary to your PATH or move it to a directory in your PATH:
-   ```bash
-   sudo mv target/release/smd /usr/local/bin/
-   ```
-
-Now you can use `smd` from anywhere in your terminal.
+This will compile the project and install the `smd` binary in your Cargo bin directory, which should be in your PATH.
 
 ## Contributing
 
@@ -117,10 +164,10 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## TODO:
 
-1. Extended Markdown Support: Create plugin system for custom extensions
+1. Extended Markdown Support
 
-2. Theming and Customization: Develop user-customizable color schemes
+2. Improve syntax highlighting
 
-3. Enhanced Image Rendering: Implement ASCII art fallback for text-only terminals
+3. Theming and Customization: Develop user-customizable color schemes and rendering options
 
 4. Text wrapping: Improve handling of long lines and text wrapping
