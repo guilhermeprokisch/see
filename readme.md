@@ -115,7 +115,7 @@ As this is an alpha version, you may encounter bugs or incomplete features. Some
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
 
-## Goals
+## TODO:
 
 1. Extended Markdown Support: Create plugin system for custom extensions
 
@@ -123,4 +123,4 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 3. Enhanced Image Rendering: Implement ASCII art fallback for text-only terminals
 
-4. Self-Documentation: Create smd's own documentation using smd
+4. Text wrapping: Improve handling of long lines and text wrapping
