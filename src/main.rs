@@ -608,20 +608,26 @@ fn get_heading_indent(level: usize) -> String {
 }
 
 fn render_help() -> io::Result<()> {
-    let help_path = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("docs")
-        .join("main.md");
+    let manifest_dir = env!("CARGO_MANIFEST_DIR");
+    let possible_paths = [
+        Path::new(manifest_dir).join("docs").join("main.md"),
+        Path::new(manifest_dir).join("main.md"), // No so nice, but it's a fix for the
+                                                 // how the binary is being packaged
+    ];
 
-    if !help_path.exists() {
-        return Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "Help file not found",
-        ));
+    for path in &possible_paths {
+        if path.exists() {
+            return Command::new(env::current_exe()?)
+                .arg(path)
+                .status()
+                .map(|_| ());
+        }
     }
 
-    Command::new(env::current_exe()?).arg(help_path).status()?;
-
-    Ok(())
+    Err(io::Error::new(
+        io::ErrorKind::NotFound,
+        "Help file not found in expected locations",
+    ))
 }
 
 fn process_definitions(node: &Value) {
