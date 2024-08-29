@@ -1,6 +1,6 @@
 [package]
 name = "smd"
-version = "0.1.0"
+version = "0.1.0-alpha.1"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 description = "A minimalistic  Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering"

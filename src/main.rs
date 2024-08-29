@@ -8,6 +8,7 @@ use std::io::Write;
 use std::io::{self};
 use std::path::{Path, PathBuf};
 use std::process;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
@@ -22,6 +23,7 @@ static mut CONTENT_INDENT_LEVEL: usize = 0;
 static mut LIST_STACK: Vec<usize> = Vec::new();
 static mut ORDERED_LIST_STACK: Vec<bool> = Vec::new();
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
+static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
 
 fn get_image_folder() -> &'static str {
     IMAGE_FOLDER.get().expect("Image folder not set")
@@ -31,11 +33,24 @@ fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: {} <file>", args[0]);
+        eprintln!("Usage: {} [--debug] <file>", args[0]);
         process::exit(1);
     }
 
-    let file_path = &args[1];
+    let mut file_path = "";
+    for arg in &args[1..] {
+        if arg == "--debug" {
+            DEBUG_MODE.store(true, Ordering::Relaxed);
+        } else {
+            file_path = arg;
+        }
+    }
+
+    if file_path.is_empty() {
+        eprintln!("Please provide a file path.");
+        process::exit(1);
+    }
+
     let content = match fs::read_to_string(file_path) {
         Ok(content) => content,
         Err(error) => {
@@ -108,10 +123,7 @@ fn render_markdown(ast: &Value) -> io::Result<()> {
 fn render_node(node: &Value) -> io::Result<()> {
     match node["type"].as_str() {
         Some("root") => render_children(node)?,
-        Some("heading") => {
-            println!("");
-            render_heading(node)?
-        }
+        Some("heading") => render_heading(node)?,
         Some("paragraph") => render_paragraph(node)?,
         Some("text") => render_text(node)?,
         Some("code") => render_code(node)?,
@@ -129,7 +141,11 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("footnoteReference") => render_footnote_reference(node)?,
         Some("imageReference") => render_image_reference(node)?,
         Some("definition") => render_definition(node)?,
-        _ => println!("{}Unsupported node type: {:?}", get_indent(), node["type"]),
+        _ => {
+            if DEBUG_MODE.load(Ordering::Relaxed) {
+                println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
+            }
+        }
     }
     Ok(())
 }
