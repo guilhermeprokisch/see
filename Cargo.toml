@@ -3,6 +3,7 @@ name = "smd"
 version = "0.1.0-alpha.1"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
+homepage = "https://github.com/guilhermeprokisch/smd"
 description = "A minimalistic  Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering"
 license = "MIT"
 repository = "https://github.com/guilhermeprokisch/smd"
@@ -35,3 +36,27 @@ textwrap = "0.16.1"
 terminal_size = "0.3.0"
 tempfile = "3.12.0"
 lazy_static = "1.5.0"
+
+# The profile that 'cargo dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
+
+# Config for 'cargo dist'
+[workspace.metadata.dist]
+# The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
+cargo-dist-version = "0.22.0"
+# CI backends to support
+ci = "github"
+# The installers to generate for each app
+installers = ["shell", "homebrew"]
+# A GitHub repo to push Homebrew formulas to
+tap = "guilhermeprokisch/homebrew-smd"
+# Target platforms to build apps for (Rust target-triple syntax)
+targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+# Path that installers should place binaries in
+install-path = "CARGO_HOME"
+# Publish jobs to run in CI
+publish-jobs = ["homebrew"]
+# Whether to install an updater program
+install-updater = true
