@@ -56,12 +56,6 @@ cat README.md | smd  # Render a file's content
 curl -sL https://raw.githubusercontent.com/guilhermeprokisch/smd/master/README.md | smd  # Render a remote Markdown file
 ```
 
-### Additional Options
-
-- `--debug`: Enable debug mode to see more information about the parsing process.
-- `--no-images`: Disable image rendering and display alt text instead.
-- `--help`: Display the help documentation.
-
 #### Integration with CLI Tools
 
 smd can be easily integrated with CLI tools to replace traditional man pages with rich Markdown documentation. Here's an example of how you can use smd with a custom CLI tool's --help flag:
