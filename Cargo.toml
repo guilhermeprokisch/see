@@ -1,6 +1,6 @@
 [package]
 name = "smd"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/smd"
