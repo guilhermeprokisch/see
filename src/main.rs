@@ -1,4 +1,5 @@
 extern crate lazy_static;
+
 use include_dir::{include_dir, Dir};
 use reqwest::blocking::Client;
 use serde_json::json;
