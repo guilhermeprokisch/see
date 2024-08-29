@@ -1919,6 +1919,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "syntect",
+ "tempfile",
  "term_size",
  "termcolor",
  "terminal_size",

@@ -1,19 +1,18 @@
-use emojis;
 use reqwest::blocking::Client;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::io::{self};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
-use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
+use tempfile::TempDir;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 use viuer::Config;
@@ -24,44 +23,39 @@ static mut LIST_STACK: Vec<usize> = Vec::new();
 static mut ORDERED_LIST_STACK: Vec<bool> = Vec::new();
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
 static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
-
-fn get_image_folder() -> &'static str {
-    IMAGE_FOLDER.get().expect("Image folder not set")
-}
+static NO_IMAGES: AtomicBool = AtomicBool::new(false);
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
+    let mut debug_mode = false;
+    let mut no_images = false;
+    let mut file_path = None;
 
-    if args.len() < 2 {
-        eprintln!("Usage: {} [--debug] <file>", args[0]);
-        process::exit(1);
-    }
-
-    let mut file_path = "";
+    // Parse command-line arguments
     for arg in &args[1..] {
-        if arg == "--debug" {
-            DEBUG_MODE.store(true, Ordering::Relaxed);
-        } else {
-            file_path = arg;
+        match arg.as_str() {
+            "--debug" => debug_mode = true,
+            "--no-images" => no_images = true,
+            _ => file_path = Some(arg),
         }
     }
 
-    if file_path.is_empty() {
-        eprintln!("Please provide a file path.");
-        process::exit(1);
-    }
+    DEBUG_MODE.store(debug_mode, Ordering::Relaxed);
+    NO_IMAGES.store(no_images, Ordering::Relaxed);
 
-    let content = match fs::read_to_string(file_path) {
-        Ok(content) => content,
-        Err(error) => {
-            eprintln!("Error reading file {}: {}", file_path, error);
-            process::exit(1);
-        }
+    let content = if let Some(path) = file_path {
+        // Read from file
+        fs::read_to_string(path)?
+    } else {
+        // Read from stdin
+        let mut buffer = String::new();
+        io::stdin().read_to_string(&mut buffer)?;
+        buffer
     };
 
-    let markdown_name = Path::new(file_path).file_stem().unwrap().to_str().unwrap();
-    let image_folder = format!("{}_images", markdown_name);
-    fs::create_dir_all(&image_folder)?;
+    // Create a temporary directory for images
+    let temp_dir = TempDir::new()?;
+    let image_folder = temp_dir.path().to_str().unwrap().to_string();
 
     // Set the global image folder
     IMAGE_FOLDER.set(image_folder).unwrap();
@@ -453,6 +447,12 @@ fn render_link(node: &Value) -> io::Result<()> {
 }
 
 fn render_image(node: &Value) -> io::Result<()> {
+    if NO_IMAGES.load(Ordering::Relaxed) {
+        // If --no-images is set, just print the image alt text
+        println!("[Image: {}]", node["alt"].as_str().unwrap_or(""));
+        return Ok(());
+    }
+
     let url = node["url"].as_str().unwrap_or("");
 
     let local_path = if Url::parse(url).is_ok() {
@@ -506,7 +506,8 @@ fn download_image(url: &str) -> io::Result<PathBuf> {
     let hash = hasher.finalize();
     let filename = format!("{:x}.jpg", hash); // Assuming JPG, adjust as needed
 
-    let path = Path::new(get_image_folder()).join(filename);
+    let image_folder = IMAGE_FOLDER.get().expect("Image folder not set");
+    let path = Path::new(image_folder).join(filename);
     fs::write(&path, content)?;
 
     Ok(path)
