@@ -1,4 +1,5 @@
 extern crate lazy_static;
+use include_dir::{include_dir, Dir};
 use reqwest::blocking::Client;
 use serde_json::json;
 use serde_json::Value;
@@ -29,6 +30,7 @@ static mut ORDERED_LIST_STACK: Vec<bool> = Vec::new();
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
 static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
 static NO_IMAGES: AtomicBool = AtomicBool::new(false);
+static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
 // Global storage for link definitions
 lazy_static::lazy_static! {
@@ -608,26 +610,21 @@ fn get_heading_indent(level: usize) -> String {
 }
 
 fn render_help() -> io::Result<()> {
-    let manifest_dir = env!("CARGO_MANIFEST_DIR");
-    let possible_paths = [
-        Path::new(manifest_dir).join("docs").join("main.md"),
-        Path::new(manifest_dir).join("main.md"), // No so nice, but it's a fix for the
-                                                 // how the binary is being packaged
-    ];
-
-    for path in &possible_paths {
-        if path.exists() {
-            return Command::new(env::current_exe()?)
-                .arg(path)
-                .status()
-                .map(|_| ());
-        }
+    if let Some(file) = DOCS_DIR.get_file("main.md") {
+        let content = file
+            .contents_utf8()
+            .unwrap_or("Help content not available.");
+        let temp_dir = tempfile::TempDir::new()?;
+        let temp_file = temp_dir.path().join("help.md");
+        std::fs::write(&temp_file, content)?;
+        Command::new(env::current_exe()?).arg(temp_file).status()?;
+        Ok(())
+    } else {
+        Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Help file not found",
+        ))
     }
-
-    Err(io::Error::new(
-        io::ErrorKind::NotFound,
-        "Help file not found in expected locations",
-    ))
 }
 
 fn process_definitions(node: &Value) {
