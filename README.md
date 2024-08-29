@@ -124,5 +124,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 3. Enhanced Image Rendering: Implement ASCII art fallback for text-only terminals
 
 4. Text wrapping: Improve handling of long lines and text wrapping
-
-.
