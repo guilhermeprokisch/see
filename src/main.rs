@@ -6,6 +6,7 @@ use std::fs;
 use std::io::Write;
 use std::io::{self, Read};
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::OnceLock;
 use syntect::easy::HighlightLines;
@@ -36,6 +37,9 @@ fn main() -> io::Result<()> {
         match arg.as_str() {
             "--debug" => debug_mode = true,
             "--no-images" => no_images = true,
+            "--help" => {
+                return render_help();
+            }
             _ => file_path = Some(arg),
         }
     }
@@ -68,6 +72,36 @@ fn main() -> io::Result<()> {
 
     render_markdown(&json)?;
 
+    Ok(())
+}
+
+fn render_node(node: &Value) -> io::Result<()> {
+    match node["type"].as_str() {
+        Some("root") => render_children(node)?,
+        Some("heading") => render_heading(node)?,
+        Some("paragraph") => render_paragraph(node)?,
+        Some("text") => render_text(node)?,
+        Some("code") => render_code(node)?,
+        Some("table") => render_table(node)?,
+        Some("list") => render_list(node)?,
+        Some("listItem") => render_list_item(node)?,
+        Some("blockquote") => render_blockquote(node)?,
+        Some("thematicBreak") => render_thematic_break()?,
+        Some("link") => render_link(node)?,
+        Some("image") => render_image(node)?,
+        Some("emphasis") => render_emphasis(node)?,
+        Some("strong") => render_strong(node)?,
+        Some("delete") => render_delete(node)?,
+        Some("inlineCode") => render_inline_code(node)?,
+        Some("footnoteReference") => render_footnote_reference(node)?,
+        Some("imageReference") => render_image_reference(node)?,
+        Some("definition") => render_definition(node)?,
+        _ => {
+            if DEBUG_MODE.load(Ordering::Relaxed) {
+                println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
+            }
+        }
+    }
     Ok(())
 }
 
@@ -112,36 +146,6 @@ fn modify_heading_ast(node: &mut Value) {
 
 fn render_markdown(ast: &Value) -> io::Result<()> {
     render_node(ast)
-}
-
-fn render_node(node: &Value) -> io::Result<()> {
-    match node["type"].as_str() {
-        Some("root") => render_children(node)?,
-        Some("heading") => render_heading(node)?,
-        Some("paragraph") => render_paragraph(node)?,
-        Some("text") => render_text(node)?,
-        Some("code") => render_code(node)?,
-        Some("table") => render_table(node)?,
-        Some("list") => render_list(node)?,
-        Some("listItem") => render_list_item(node)?,
-        Some("blockquote") => render_blockquote(node)?,
-        Some("thematicBreak") => render_thematic_break()?,
-        Some("link") => render_link(node)?,
-        Some("image") => render_image(node)?,
-        Some("emphasis") => render_emphasis(node)?,
-        Some("strong") => render_strong(node)?,
-        Some("delete") => render_delete(node)?,
-        Some("inlineCode") => render_inline_code(node)?,
-        Some("footnoteReference") => render_footnote_reference(node)?,
-        Some("imageReference") => render_image_reference(node)?,
-        Some("definition") => render_definition(node)?,
-        _ => {
-            if DEBUG_MODE.load(Ordering::Relaxed) {
-                println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
-            }
-        }
-    }
-    Ok(())
 }
 
 fn render_children(node: &Value) -> io::Result<()> {
@@ -221,14 +225,14 @@ fn render_code(node: &Value) -> io::Result<()> {
         .unwrap_or_else(|| ps.find_syntax_plain_text());
     let mut h = HighlightLines::new(syntax, &ts.themes["Solarized (dark)"]);
 
-    // Print language in italic gray
-    stdout.set_color(
-        ColorSpec::new()
-            .set_fg(Some(Color::Ansi256(242)))
-            .set_italic(true),
-    )?;
-    println!("{}{}", get_indent(), lang);
-    stdout.reset()?;
+    // Print language in italic gray # TODO: Make this optional
+    // stdout.set_color(
+    //     ColorSpec::new()
+    //         .set_fg(Some(Color::Ansi256(242)))
+    //         .set_italic(true),
+    // )?;
+    // println!("{}{}", get_indent(), lang);
+    // stdout.reset()?;
 
     // Add extra indentation for code content
     let code_indent = get_indent() + "  ";
@@ -549,7 +553,7 @@ fn render_delete(node: &Value) -> io::Result<()> {
 fn render_inline_code(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))?;
-    print!(" `{}` ", node["value"].as_str().unwrap_or(""));
+    print!(" {} ", node["value"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
 }
@@ -592,4 +596,21 @@ fn render_definition(node: &Value) -> io::Result<()> {
 
 fn get_heading_indent(level: usize) -> String {
     "  ".repeat(level - 1)
+}
+
+fn render_help() -> io::Result<()> {
+    let help_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("docs")
+        .join("main.md");
+
+    if !help_path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::NotFound,
+            "Help file not found",
+        ));
+    }
+
+    Command::new(env::current_exe()?).arg(help_path).status()?;
+
+    Ok(())
 }
