@@ -10,7 +10,7 @@ repository = "https://github.com/guilhermeprokisch/smd"
 readme = "README.md"
 keywords = ["markdown", "terminal", "renderer", "syntax-highlighting", "emoji"]
 categories = ["command-line-utilities", "text-processing"]
-include = ["src/**/*", "docs/**.*", "Cargo.toml"]
+include = ["src/**/*", "docs/**/*", "Cargo.toml"]
 
 
 [dependencies]
