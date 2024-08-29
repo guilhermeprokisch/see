@@ -33,6 +33,7 @@ static NO_IMAGES: AtomicBool = AtomicBool::new(false);
 // Global storage for link definitions
 lazy_static::lazy_static! {
     static ref LINK_DEFINITIONS: Mutex<HashMap<String, (String, Option<String>)>> = Mutex::new(HashMap::new());
+    static ref FOOTNOTES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
 fn main() -> io::Result<()> {
@@ -77,14 +78,13 @@ fn main() -> io::Result<()> {
     let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
 
     process_definitions(&json);
+    process_footnotes(&json);
     modify_heading_ast(&mut json);
     modify_list_item_ast(&mut json);
 
     render_markdown(&json)?;
 
-    // Clear link definitions after rendering
     LINK_DEFINITIONS.lock().unwrap().clear();
-
     Ok(())
 }
 
@@ -160,6 +160,7 @@ fn modify_heading_ast(node: &mut Value) {
 
 fn render_markdown(ast: &Value) -> io::Result<()> {
     render_node(ast)?;
+    render_footnotes()?;
     Ok(())
 }
 
@@ -440,7 +441,16 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
 }
 
 fn render_thematic_break() -> io::Result<()> {
-    println!("{}---", get_indent());
+    // TODO: I don't like rulers in the terminal, maybe it can be optional?
+    // let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    // stdout.set_color(ColorSpec::new().set_fg(Some(Color::Black)))?;
+    //
+    // let width = 80; // You can adjust this value or make it dynamic based on terminal width
+    // let line = "─".repeat(width);
+    //
+    // println!("{}{}", get_indent(), line);
+    //
+    // stdout.reset()?;
     Ok(())
 }
 
@@ -482,14 +492,16 @@ fn render_image(node: &Value) -> io::Result<()> {
     let url = node["url"].as_str().unwrap_or("");
 
     let local_path = if Url::parse(url).is_ok() {
-        download_image(url)?
+        match download_image(url) {
+            Ok(path) => path,
+            Err(_) => return Ok(()), // Silently ignore download errors
+        }
     } else {
         PathBuf::from(url)
     };
 
     if !local_path.exists() {
-        println!("Image file not found: {:?}", local_path);
-        return Ok(());
+        return Ok(()); // Silently ignore if the file doesn't exist
     }
 
     // Attempt to render the image using viuer
@@ -500,9 +512,8 @@ fn render_image(node: &Value) -> io::Result<()> {
         ..Default::default()
     };
 
-    match viuer::print_from_file(local_path, &config) {
-        Ok(_) => return Ok(()),
-        Err(e) => println!("Failed to render image: {}", e),
+    if let Err(_) = viuer::print_from_file(local_path, &config) {
+        // Silently ignore rendering errors
     }
 
     Ok(())
@@ -576,14 +587,6 @@ fn render_inline_code(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))?;
     print!(" {} ", node["value"].as_str().unwrap_or(""));
-    stdout.reset()?;
-    Ok(())
-}
-
-fn render_footnote_reference(node: &Value) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)).set_bold(true))?;
-    print!("[^{}]", node["identifier"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
 }
@@ -663,6 +666,86 @@ fn render_definition(node: &Value) -> io::Result<()> {
 
     let mut definitions = LINK_DEFINITIONS.lock().unwrap();
     definitions.insert(identifier.to_string(), (url.to_string(), title));
+
+    Ok(())
+}
+
+fn process_footnotes(node: &Value) {
+    if let Some("footnoteDefinition") = node["type"].as_str() {
+        let identifier = node["identifier"].as_str().unwrap_or("");
+        let mut content = String::new();
+        if let Some(children) = node["children"].as_array() {
+            for child in children {
+                content.push_str(&node_to_string(child));
+            }
+        }
+        FOOTNOTES
+            .lock()
+            .unwrap()
+            .insert(identifier.to_string(), content);
+    }
+
+    if let Some(children) = node["children"].as_array() {
+        for child in children {
+            process_footnotes(child);
+        }
+    }
+}
+
+fn node_to_string(node: &Value) -> String {
+    let mut content = String::new();
+    if let Some("text") = node["type"].as_str() {
+        content.push_str(node["value"].as_str().unwrap_or(""));
+    } else if let Some(children) = node["children"].as_array() {
+        for child in children {
+            content.push_str(&node_to_string(child));
+        }
+    }
+    content
+}
+
+// Add a new function to render all footnotes
+fn render_footnotes() -> io::Result<()> {
+    let footnotes = FOOTNOTES.lock().unwrap();
+    if footnotes.is_empty() {
+        return Ok(());
+    }
+
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)).set_italic(true))?;
+    println!("Footnotes:");
+    for (identifier, content) in footnotes.iter() {
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)).set_italic(true))?;
+        print!("{}: ", identifier);
+        stdout.reset()?;
+        println!("{}", content);
+    }
+    println!();
+
+    Ok(())
+}
+
+// Modify the render_footnote_reference function
+fn render_footnote_reference(node: &Value) -> io::Result<()> {
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let identifier = node["identifier"].as_str().unwrap_or("");
+    stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)).set_italic(true))?;
+    print!(" [^{}]", identifier);
+    stdout.reset()?;
+
+    // Store the footnote content
+    if let Some(children) = node["children"].as_array() {
+        let content = children
+            .iter()
+            .filter_map(|child| child["value"].as_str())
+            .collect::<Vec<&str>>()
+            .join(" ");
+        FOOTNOTES
+            .lock()
+            .unwrap()
+            .insert(identifier.to_string(), content);
+    }
 
     Ok(())
 }
