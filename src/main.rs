@@ -185,6 +185,8 @@ fn render_heading(node: &Value) -> io::Result<()> {
         _ => Color::White,
     };
 
+    // Add a space before the every heading
+    println!();
     stdout.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))?;
     print!("{}", get_heading_indent(level));
     render_children(node)?;
@@ -446,6 +448,8 @@ fn render_link(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     let url = node["url"].as_str().unwrap_or("");
 
+    // Add a space before the link reference
+    print!(" ");
     // Start OSC 8 hyperlink
     print!("\x1B]8;;{}\x1B\\", url);
 
@@ -461,6 +465,9 @@ fn render_link(node: &Value) -> io::Result<()> {
 
     // End OSC 8 hyperlink
     print!("\x1B]8;;\x1B\\");
+
+    // Add a space after the link reference
+    print!(" ");
 
     Ok(())
 }
@@ -640,11 +647,13 @@ fn render_link_reference(node: &Value) -> io::Result<()> {
         });
 
         // Render as a regular link
-        render_link(&link_node)
+        render_link(&link_node)?;
     } else {
         // If definition is not found, render as plain text
-        render_children(node)
+        render_children(node)?;
     }
+
+    Ok(())
 }
 
 fn render_definition(node: &Value) -> io::Result<()> {
