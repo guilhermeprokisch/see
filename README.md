@@ -12,7 +12,7 @@ smd is a minimalistic Markdown renderer for the terminal with syntax highlightin
 The primary goal of smd is to create CLI documentation in Markdown that can be rendered both in the terminal and viewed in a web browser. This dual-format approach aims to:
 
 1. Provide a unified documentation format accessible across different environments
-2. Enable quick viewing of rich documentation directly in the terminal
+2. Enable quick viewing end editing of cli documentations from anywhere
 
 As the project evolved, support for more complex Markdown features was added. This expansion opens up possibilities for integration with other documentation tools and workflows, potentially enhancing its utility in diverse development ecosystems.
 
