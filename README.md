@@ -12,7 +12,7 @@ smd is a minimalistic Markdown renderer for the terminal with syntax highlightin
 The primary goal of smd is to create CLI documentation in Markdown that can be rendered both in the terminal and viewed in a web browser. This dual-format approach aims to:
 
 1. Provide a unified documentation format accessible across different environments
-2. Enable quick viewing of rich documentation directly in the terminal
+2. Enable quick viewing end editing of cli documentations from anywhere
 
 As the project evolved, support for more complex Markdown features was added. This expansion opens up possibilities for integration with other documentation tools and workflows, potentially enhancing its utility in diverse development ecosystems.
 
@@ -28,6 +28,58 @@ As the project evolved, support for more complex Markdown features was added. Th
 - Nested list support
 - Blockquote styling
 - And more adding soon!
+## Installation
+
+There are several ways to install smd:
+
+### 1. Using Cargo (Recommended)
+
+You can install smd directly from crates.io using Cargo:
+
+```bash
+cargo install smd
+```
+
+This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
+
+### 2. Install prebuilt binaries via shell script
+
+You can quickly install smd using our shell script:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.7/smd-installer.sh | sh
+```
+
+**DISCLAIMER: The version number in the URL above (v0.2.7) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
+
+### 3. Install prebuilt binaries via Homebrew
+
+If you're using Homebrew, you can install smd with:
+
+```sh
+brew install guilhermeprokisch/smd/smd
+```
+
+### 4. Building from Source
+
+If you prefer to build from source or want to contribute to the project:
+
+1. Ensure you have Rust and Cargo installed. If not, get them from [https://rustup.rs/](https://rustup.rs/).
+
+2. Clone the repository:
+
+   ```bash
+   git clone https://github.com/guilhermeprokisch/smd.git
+   cd smd
+   ```
+
+3. Build and install the project using Cargo:
+
+   ```bash
+   cargo install --path .
+   ```
+
+This will compile the project and install the `smd` binary in your Cargo bin directory, which should be in your PATH.
 
 ## Usage
 
@@ -90,59 +142,6 @@ smd --help
 ```
 
 This command will render smd's main documentation file `/docs`, giving you a practical example of smd in action and providing detailed information about its usage and features.
-
-## Installation
-
-There are several ways to install smd:
-
-### 1. Using Cargo (Recommended)
-
-You can install smd directly from crates.io using Cargo:
-
-```bash
-cargo install smd
-```
-
-This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
-
-### 2. Install prebuilt binaries via shell script
-
-You can quickly install smd using our shell script:
-
-```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.0/smd-installer.sh | sh
-```
-
-**DISCLAIMER: The version number in the URL above (v0.2.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
-
-### 3. Install prebuilt binaries via Homebrew
-
-If you're using Homebrew, you can install smd with:
-
-```sh
-brew install guilhermeprokisch/smd/smd
-```
-
-### 4. Building from Source
-
-If you prefer to build from source or want to contribute to the project:
-
-1. Ensure you have Rust and Cargo installed. If not, get them from [https://rustup.rs/](https://rustup.rs/).
-
-2. Clone the repository:
-
-   ```bash
-   git clone https://github.com/guilhermeprokisch/smd.git
-   cd smd
-   ```
-
-3. Build and install the project using Cargo:
-
-   ```bash
-   cargo install --path .
-   ```
-
-This will compile the project and install the `smd` binary in your Cargo bin directory, which should be in your PATH.
 
 ## Contributing
 
