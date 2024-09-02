@@ -53,6 +53,9 @@ fn main() -> io::Result<()> {
             "--help" => {
                 return render_help();
             }
+            "--version" => {
+                return print_version();
+            }
             _ => file_path = Some(arg),
         }
     }
@@ -751,5 +754,10 @@ fn render_footnote_reference(node: &Value) -> io::Result<()> {
             .insert(identifier.to_string(), content);
     }
 
+    Ok(())
+}
+
+fn print_version() -> io::Result<()> {
+    println!("smd version {}", env!("CARGO_PKG_VERSION"));
     Ok(())
 }
