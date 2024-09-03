@@ -23,4 +23,4 @@ Render a Markdown file:
 `smd path/to/your/markdown_file.md`
 
 Render from standard input:
-`echo "# Hello, world!" | smd`
+`echo "# Hello, world" | smd`

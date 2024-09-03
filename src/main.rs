@@ -443,27 +443,6 @@ fn get_indent() -> String {
     }
 }
 
-fn render_blockquote(node: &Value) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
-    stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta)))?;
-    print!("{}> ", get_indent());
-
-    // Increase indent level
-    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
-        *content_indent_level += 1;
-    }
-
-    render_children(node)?;
-
-    // Decrease indent level
-    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
-        *content_indent_level -= 1;
-    }
-
-    stdout.reset()?;
-    Ok(())
-}
-
 fn render_thematic_break() -> io::Result<()> {
     // TODO: I don't like rulers in the terminal, maybe it can be optional?
     // let mut stdout = StandardStream::stdout(ColorChoice::Always);
@@ -778,4 +757,125 @@ fn render_footnote_reference(node: &Value) -> io::Result<()> {
 fn print_version() -> io::Result<()> {
     println!("smd version {}", env!("CARGO_PKG_VERSION"));
     Ok(())
+}
+
+#[derive(Debug, PartialEq)]
+enum AdmonitionType {
+    Note,
+    Tip,
+    Important,
+    Warning,
+    Caution,
+}
+
+impl AdmonitionType {
+    fn from_str(s: &str) -> Option<Self> {
+        match s.to_uppercase().as_str() {
+            "NOTE" => Some(AdmonitionType::Note),
+            "TIP" => Some(AdmonitionType::Tip),
+            "IMPORTANT" => Some(AdmonitionType::Important),
+            "WARNING" => Some(AdmonitionType::Warning),
+            "CAUTION" => Some(AdmonitionType::Caution),
+            _ => None,
+        }
+    }
+
+    fn color(&self) -> Color {
+        match self {
+            AdmonitionType::Note => Color::Cyan,
+            AdmonitionType::Tip => Color::Green,
+            AdmonitionType::Important => Color::Magenta,
+            AdmonitionType::Warning => Color::Yellow,
+            AdmonitionType::Caution => Color::Red,
+        }
+    }
+
+    fn icon(&self) -> &str {
+        match self {
+            AdmonitionType::Note => " ",
+            AdmonitionType::Tip => " ",
+            AdmonitionType::Important => " ",
+            AdmonitionType::Warning => " ",
+            AdmonitionType::Caution => " ",
+        }
+    }
+}
+
+fn parse_admonition(node: &Value) -> Option<(AdmonitionType, String)> {
+    if node["type"] != "blockquote" {
+        return None;
+    }
+
+    if let Some(children) = node["children"].as_array() {
+        if let Some(first_child) = children.first() {
+            if first_child["type"] == "paragraph" {
+                if let Some(paragraph_children) = first_child["children"].as_array() {
+                    if let Some(text_node) = paragraph_children.first() {
+                        if text_node["type"] == "text" {
+                            if let Some(text) = text_node["value"].as_str() {
+                                if text.trim().starts_with("[!") && text.contains("]") {
+                                    let end = text.find("]").unwrap();
+                                    let admonition_str = &text[2..end];
+                                    if let Some(admonition) =
+                                        AdmonitionType::from_str(admonition_str)
+                                    {
+                                        let content = text[end + 1..].trim().to_string()
+                                            + &paragraph_children[1..]
+                                                .iter()
+                                                .filter_map(|node| node["value"].as_str())
+                                                .collect::<Vec<_>>()
+                                                .join(" ");
+                                        return Some((admonition, content));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
+}
+
+fn render_admonition(admonition_type: AdmonitionType, content: &str) -> io::Result<()> {
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    stdout.set_color(
+        ColorSpec::new()
+            .set_fg(Some(admonition_type.color()))
+            .set_bold(true),
+    )?;
+    print!(
+        "{} {}: ",
+        admonition_type.icon(),
+        format!("{:?}", admonition_type)
+    );
+    stdout.reset()?;
+
+    println!("{}", content);
+    Ok(())
+}
+
+fn render_blockquote(node: &Value) -> io::Result<()> {
+    if let Some((admonition_type, content)) = parse_admonition(node) {
+        render_admonition(admonition_type, &content)
+    } else {
+        // Existing blockquote rendering logic
+        let mut stdout = StandardStream::stdout(ColorChoice::Always);
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta)))?;
+        print!("{}> ", get_indent());
+
+        if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+            *content_indent_level += 1;
+        }
+
+        render_children(node)?;
+
+        if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+            *content_indent_level -= 1;
+        }
+
+        stdout.reset()?;
+        Ok(())
+    }
 }
