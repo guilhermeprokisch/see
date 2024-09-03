@@ -50,7 +50,7 @@ You can quickly install smd using our shell script:
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.9/smd-installer.sh | sh
 ```
 
-**DISCLAIMER: The version number in the URL above (v0.2.7) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
+**DISCLAIMER: The version number in the URL above (v0.2.9) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
 
 ### 3. Install prebuilt binaries via Homebrew
 
