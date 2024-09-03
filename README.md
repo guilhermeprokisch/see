@@ -144,10 +144,6 @@ smd --help
 
 This command will render smd's main documentation file `/docs`, giving you a practical example of smd in action and providing detailed information about its usage and features.
 
-# smd (Simple Markdown Viewer)
-
-...
-
 ## Configuration
 
 smd supports user-defined configuration files. You can customize various aspects of the rendering process by creating a `config.toml` file in the following location:
@@ -197,5 +193,3 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 2. Improve syntax highlighting
 
 3. Theming and Customization: Develop user-customizable color schemes and rendering options
-
-4. Text wrapping: Improve handling of long lines and text wrapping
