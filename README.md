@@ -1,4 +1,4 @@
-/# smd (Simple Markdown Viewer)
+# smd (Simple Markdown Viewer)
 
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/9ead893a-e3b2-4b0f-9945-e751ff67d3ef">
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
