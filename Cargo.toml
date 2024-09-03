@@ -27,7 +27,7 @@ syntect = { version = "5.2.0", features = [
 emojis = "0.6.3"
 viuer = "0.7.1"
 url = "2.5.2"
-reqwest = { version = "0.12.7", features = ["blocking"] }
+reqwest = { version = "0.12.7", features = ["blocking", "native-tls-vendored"] }
 sha2 = "0.10.8"
 term_size = "0.3.2"
 crossterm = "0.28.1"
@@ -44,7 +44,6 @@ openssl-sys = { version = "0.9", features = ["vendored"] }
 [profile.dist]
 inherits = "release"
 lto = "thin"
-
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
@@ -70,5 +69,3 @@ install-path = "CARGO_HOME"
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = true
-
-allow-dirty = ["ci", "msi"]
