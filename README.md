@@ -164,15 +164,33 @@ theme = "default"
 code_highlight_theme = "Solarized (dark)"
 max_image_width = 40
 max_image_height = 13
-disable_images = false
-disable_links = false
+render_images = true
+render_links = true
+render_table_borders = false
 ```
 
 - `theme`: Overall color scheme (default: "default")
 - `code_highlight_theme`: Theme for code syntax highlighting (default: "Solarized (dark)")
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
-- `disable_images`: If true, images will not be rendered
-- `disable_links`: If true, links will not be clickable
+- `render_images`: If false, images will not be rendered
+- `render_links`: If false, links will not be clickable
+- `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
+
+### Available Code Highlight Themes
+
+The `code_highlight_theme` option can be set to any of the following values:
+
+- "base16-ocean.dark"
+- "base16-eighties.dark"
+- "base16-mocha.dark"
+- "base16-ocean.light"
+- "InspiredGitHub"
+- "Solarized (dark)"
+- "Solarized (light)"
+
+These are the default themes provided by the syntect library. Choose the theme that best suits your terminal's color scheme and personal preferences.
+
+Note: The actual appearance of these themes may vary slightly depending on your terminal's color settings.
 
 ## Contributing
 

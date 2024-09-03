@@ -36,23 +36,23 @@ static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
-    pub theme: String,
     pub code_highlight_theme: String,
     pub max_image_width: Option<u32>,
     pub max_image_height: Option<u32>,
     pub render_images: bool,
     pub render_links: bool,
+    pub render_table_borders: bool,
 }
 
 impl Default for Config {
     fn default() -> Self {
         Config {
-            theme: "default".to_string(),
             code_highlight_theme: "Solarized (dark)".to_string(),
             max_image_width: Some(40),
             max_image_height: Some(13),
             render_images: true,
             render_links: true,
+            render_table_borders: false,
         }
     }
 }
@@ -377,6 +377,7 @@ fn style_to_termcolor(style: &Style) -> Option<Color> {
 
 fn render_table(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let config = get_config();
 
     if let Some(children) = node["children"].as_array() {
         let mut column_widths = Vec::new();
@@ -398,7 +399,17 @@ fn render_table(node: &Value) -> io::Result<()> {
         // Render table
         for (i, row) in children.iter().enumerate() {
             if let Some(cells) = row["children"].as_array() {
+                // Top border for the first row
+                if i == 0 && config.render_table_borders {
+                    print_horizontal_border(&column_widths, "┌", "┬", "┐")?;
+                }
+
                 print!("{}", get_indent());
+
+                if config.render_table_borders {
+                    print!("│ ");
+                }
+
                 for (j, cell) in cells.iter().enumerate() {
                     let content = cell["children"][0]["value"].as_str().unwrap_or("");
 
@@ -413,17 +424,56 @@ fn render_table(node: &Value) -> io::Result<()> {
                     }
 
                     print!("{:<width$}", content, width = column_widths[j]);
+                    stdout.reset()?;
 
-                    if j < cells.len() - 1 {
+                    if config.render_table_borders {
+                        if j < cells.len() - 1 {
+                            print!(" │ ");
+                        } else {
+                            print!(" │");
+                        }
+                    } else if j < cells.len() - 1 {
                         print!("  "); // Add two spaces between columns
                     }
                 }
+
                 println!();
-                stdout.reset()?;
+
+                // Print horizontal line after header and between rows
+                if config.render_table_borders {
+                    if i == 0 {
+                        print_horizontal_border(&column_widths, "├", "┼", "┤")?;
+                    } else if i < children.len() - 1 {
+                        print_horizontal_border(&column_widths, "├", "┼", "┤")?;
+                    }
+                }
             }
+        }
+
+        // Print bottom border
+        if config.render_table_borders {
+            print_horizontal_border(&column_widths, "└", "┴", "┘")?;
         }
     }
 
+    Ok(())
+}
+
+fn print_horizontal_border(
+    column_widths: &[usize],
+    left: &str,
+    middle: &str,
+    right: &str,
+) -> io::Result<()> {
+    print!("{}", get_indent());
+    print!("{}", left);
+    for (i, width) in column_widths.iter().enumerate() {
+        print!("{}", "─".repeat(width + 2)); // +2 for the padding spaces
+        if i < column_widths.len() - 1 {
+            print!("{}", middle);
+        }
+    }
+    println!("{}", right);
     Ok(())
 }
 
