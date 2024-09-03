@@ -45,8 +45,6 @@ openssl-sys = { version = "0.9", features = ["vendored"] }
 inherits = "release"
 lto = "thin"
 
-[dist]
-allow-dirty = ["ci", "msi"]
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
@@ -72,3 +70,5 @@ install-path = "CARGO_HOME"
 publish-jobs = ["homebrew"]
 # Whether to install an updater program
 install-updater = true
+
+allow-dirty = ["ci", "msi"]
