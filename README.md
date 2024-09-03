@@ -160,7 +160,6 @@ smd --generate-config
 Here's an example of what you can configure:
 
 ```toml
-theme = "default"
 code_highlight_theme = "Solarized (dark)"
 max_image_width = 40
 max_image_height = 13
@@ -169,7 +168,6 @@ render_links = true
 render_table_borders = false
 ```
 
-- `theme`: Overall color scheme (default: "default")
 - `code_highlight_theme`: Theme for code syntax highlighting (default: "Solarized (dark)")
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
 - `render_images`: If false, images will not be rendered
