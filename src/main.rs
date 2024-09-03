@@ -1,6 +1,7 @@
 extern crate lazy_static;
 
 use include_dir::{include_dir, Dir};
+use lazy_static::lazy_static;
 use reqwest::blocking::Client;
 use serde_json::json;
 use serde_json::Value;
@@ -13,6 +14,7 @@ use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use syntect::easy::HighlightLines;
@@ -24,18 +26,19 @@ use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 use viuer::Config;
 
-static mut CURRENT_HEADING_LEVEL: usize = 0;
-static mut CONTENT_INDENT_LEVEL: usize = 0;
-static mut LIST_STACK: Vec<usize> = Vec::new();
-static mut ORDERED_LIST_STACK: Vec<bool> = Vec::new();
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
 static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
 static NO_IMAGES: AtomicBool = AtomicBool::new(false);
 static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
-// Global storage for link definitions
-lazy_static::lazy_static! {
-    static ref LINK_DEFINITIONS: Mutex<HashMap<String, (String, Option<String>)>> = Mutex::new(HashMap::new());
+// Global storage
+lazy_static! {
+    static ref CURRENT_HEADING_LEVEL: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+    static ref CONTENT_INDENT_LEVEL: Arc<Mutex<usize>> = Arc::new(Mutex::new(0));
+    static ref LIST_STACK: Arc<Mutex<Vec<usize>>> = Arc::new(Mutex::new(Vec::new()));
+    static ref ORDERED_LIST_STACK: Arc<Mutex<Vec<bool>>> = Arc::new(Mutex::new(Vec::new()));
+    static ref LINK_DEFINITIONS: Mutex<HashMap<String, (String, Option<String>)>> =
+        Mutex::new(HashMap::new());
     static ref FOOTNOTES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
 }
 
@@ -192,7 +195,6 @@ fn render_heading(node: &Value) -> io::Result<()> {
         _ => Color::White,
     };
 
-    // Add a space before the every heading
     println!();
     stdout.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))?;
     print!("{}", get_heading_indent(level));
@@ -200,9 +202,11 @@ fn render_heading(node: &Value) -> io::Result<()> {
     stdout.reset()?;
     println!();
 
-    unsafe {
-        CURRENT_HEADING_LEVEL = level;
-        CONTENT_INDENT_LEVEL = level;
+    if let Ok(mut current_heading_level) = CURRENT_HEADING_LEVEL.lock() {
+        *current_heading_level = level;
+    }
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level = level;
     }
 
     Ok(())
@@ -346,16 +350,18 @@ fn render_table(node: &Value) -> io::Result<()> {
 
 fn render_list(node: &Value) -> io::Result<()> {
     let is_ordered = node["ordered"].as_bool().unwrap_or(false);
-    unsafe {
-        LIST_STACK.push(0);
-        ORDERED_LIST_STACK.push(is_ordered);
-        // Don't increase CONTENT_INDENT_LEVEL here
+    if let Ok(mut list_stack) = LIST_STACK.lock() {
+        list_stack.push(0);
+    }
+    if let Ok(mut ordered_list_stack) = ORDERED_LIST_STACK.lock() {
+        ordered_list_stack.push(is_ordered);
     }
     render_children(node)?;
-    unsafe {
-        LIST_STACK.pop();
-        ORDERED_LIST_STACK.pop();
-        // No need to decrease CONTENT_INDENT_LEVEL
+    if let Ok(mut list_stack) = LIST_STACK.lock() {
+        list_stack.pop();
+    }
+    if let Ok(mut ordered_list_stack) = ORDERED_LIST_STACK.lock() {
+        ordered_list_stack.pop();
     }
     Ok(())
 }
@@ -365,11 +371,13 @@ fn render_list_item(node: &Value) -> io::Result<()> {
 
     print!("{}", get_indent());
 
-    unsafe {
-        if let (Some(index), Some(is_ordered)) = (LIST_STACK.last_mut(), ORDERED_LIST_STACK.last())
-        {
+    {
+        let mut list_stack = LIST_STACK.lock().unwrap();
+        let ordered_list_stack = ORDERED_LIST_STACK.lock().unwrap();
+
+        if let Some(index) = list_stack.last_mut() {
             *index += 1;
-            if *is_ordered {
+            if *ordered_list_stack.last().unwrap_or(&false) {
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)))?;
                 print!("{:2}. ", *index);
             } else {
@@ -380,21 +388,21 @@ fn render_list_item(node: &Value) -> io::Result<()> {
             stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
             print!("• ");
         }
-        stdout.reset()?;
     }
+    stdout.reset()?;
 
     if let Some(checked) = node["checked"].as_bool() {
         render_task_list_item_checkbox(checked)?;
     }
 
-    unsafe {
-        CONTENT_INDENT_LEVEL += 1;
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level += 1;
     }
 
     render_children(node)?;
 
-    unsafe {
-        CONTENT_INDENT_LEVEL -= 1;
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level -= 1;
     }
 
     println!(); // Add a newline after each list item
@@ -417,8 +425,8 @@ fn render_task_list_item_checkbox(checked: bool) -> io::Result<()> {
 
 fn render_paragraph(node: &Value) -> io::Result<()> {
     // Only print indent if it's not inside a list item
-    unsafe {
-        if LIST_STACK.is_empty() {
+    if let Ok(list_stack) = LIST_STACK.lock() {
+        if list_stack.is_empty() {
             print!("{}", get_indent());
         }
     }
@@ -428,20 +436,30 @@ fn render_paragraph(node: &Value) -> io::Result<()> {
 }
 
 fn get_indent() -> String {
-    unsafe { "  ".repeat(CONTENT_INDENT_LEVEL) }
+    if let Ok(content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        "  ".repeat(*content_indent_level)
+    } else {
+        String::new() // Return empty string if lock fails
+    }
 }
 
 fn render_blockquote(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Magenta)))?;
     print!("{}> ", get_indent());
-    unsafe {
-        CONTENT_INDENT_LEVEL += 1;
+
+    // Increase indent level
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level += 1;
     }
+
     render_children(node)?;
-    unsafe {
-        CONTENT_INDENT_LEVEL -= 1;
+
+    // Decrease indent level
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level -= 1;
     }
+
     stdout.reset()?;
     Ok(())
 }
