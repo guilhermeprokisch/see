@@ -1,4 +1,4 @@
-smd: simple Markdown renderer
+# smd: simple Markdown renderer
 
 ## Usage
 
@@ -10,17 +10,45 @@ If FILE is not provided, smd reads from standard input.
 
 ## Options
 
-|               |                                      |
-| ------------- | ------------------------------------ |
-| `--debug`     | Enable debug mode for verbose output |
-| `--no-images` | Disable image rendering              |
-| `--help`      | Display this help information        |
-| `--version`   | Display version information          |
+|                     |                                       |
+| ------------------- | ------------------------------------- |
+| `--debug`           | Enable debug mode for verbose output  |
+| `--help`            | Display this help information         |
+| `--version`         | Display version information           |
+| `--generate-config` | Generate a default configuration file |
+
+## Configuration
+
+smd uses a configuration file located at:
+
+- Linux/macOS: `~/.config/smd/config.toml`
+- Windows: `%APPDATA%\smd\config.toml`
+
+You can generate a default configuration file using the `--generate-config` option.
+
+The configuration file allows you to customize various aspects of the rendering, including:
+
+- Enabling/disabling image rendering
+- Setting maximum image dimensions
+- Choosing the code highlighting theme
+- Enabling/disabling clickable links
 
 ## Examples
 
 Render a Markdown file:
-`smd path/to/your/markdown_file.md`
+
+```bash
+smd path/to/your/markdown_file.md
+```
 
 Render from standard input:
-`echo "# Hello, world" | smd`
+
+```bash
+echo "# Hello, world" | smd
+```
+
+Generate a default configuration file:
+
+```bash
+smd --generate-config
+```

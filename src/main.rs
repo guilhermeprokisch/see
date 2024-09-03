@@ -1,8 +1,10 @@
 extern crate lazy_static;
 
+use dirs::home_dir;
 use include_dir::{include_dir, Dir};
 use lazy_static::lazy_static;
 use reqwest::blocking::Client;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use serde_json::Value;
 use sha2::{Digest, Sha256};
@@ -17,19 +19,43 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
+use std::sync::RwLock;
 use syntect::easy::HighlightLines;
 use syntect::highlighting::{Style, ThemeSet};
 use syntect::parsing::SyntaxSet;
 use syntect::util::LinesWithEndings;
 use tempfile::TempDir;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
+
 use url::Url;
-use viuer::Config;
 
 static IMAGE_FOLDER: OnceLock<String> = OnceLock::new();
 static DEBUG_MODE: AtomicBool = AtomicBool::new(false);
 static NO_IMAGES: AtomicBool = AtomicBool::new(false);
 static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Config {
+    pub theme: String,
+    pub code_highlight_theme: String,
+    pub max_image_width: Option<u32>,
+    pub max_image_height: Option<u32>,
+    pub render_images: bool,
+    pub render_links: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            theme: "default".to_string(),
+            code_highlight_theme: "Solarized (dark)".to_string(),
+            max_image_width: Some(40),
+            max_image_height: Some(13),
+            render_images: true,
+            render_links: true,
+        }
+    }
+}
 
 // Global storage
 lazy_static! {
@@ -40,31 +66,83 @@ lazy_static! {
     static ref LINK_DEFINITIONS: Mutex<HashMap<String, (String, Option<String>)>> =
         Mutex::new(HashMap::new());
     static ref FOOTNOTES: Mutex<HashMap<String, String>> = Mutex::new(HashMap::new());
+    static ref GLOBAL_CONFIG: RwLock<Config> = RwLock::new(Config::default());
+}
+
+fn load_config() {
+    let config_dir = if cfg!(target_os = "macos") {
+        home_dir()
+            .map(|path| path.join(".config"))
+            .unwrap_or_else(|| PathBuf::from("~/.config"))
+    } else {
+        dirs::config_dir().unwrap_or_else(|| PathBuf::from("~/.config"))
+    };
+
+    let config_path = config_dir.join("smd").join("config.toml");
+
+    let config = if config_path.exists() {
+        match fs::read_to_string(&config_path) {
+            Ok(contents) => match toml::from_str(&contents) {
+                Ok(parsed_config) => parsed_config,
+                Err(e) => {
+                    eprintln!(
+                        "Failed to parse config file: {}. Using default configuration.",
+                        e
+                    );
+                    Config::default()
+                }
+            },
+            Err(e) => {
+                eprintln!(
+                    "Failed to read config file: {}. Using default configuration.",
+                    e
+                );
+                Config::default()
+            }
+        }
+    } else {
+        eprintln!(
+            "Config file not found at {:?}. Using default configuration.",
+            config_path
+        );
+        Config::default()
+    };
+
+    let mut global_config = GLOBAL_CONFIG.write().unwrap();
+    *global_config = config;
+}
+
+fn get_config() -> Config {
+    GLOBAL_CONFIG.read().unwrap().clone()
 }
 
 fn main() -> io::Result<()> {
     let args: Vec<String> = env::args().collect();
     let mut debug_mode = false;
-    let mut no_images = false;
     let mut file_path = None;
 
     // Parse command-line arguments
     for arg in &args[1..] {
         match arg.as_str() {
             "--debug" => debug_mode = true,
-            "--no-images" => no_images = true,
             "--help" => {
                 return render_help();
             }
             "--version" => {
                 return print_version();
             }
+            "--generate-config" => {
+                return generate_default_config();
+            }
             _ => file_path = Some(arg),
         }
     }
 
+    // Load the configuration
+    load_config();
+
     DEBUG_MODE.store(debug_mode, Ordering::Relaxed);
-    NO_IMAGES.store(no_images, Ordering::Relaxed);
+    NO_IMAGES.store(get_config().render_images, Ordering::Relaxed);
 
     let content = if let Some(path) = file_path {
         // Read from file
@@ -248,10 +326,11 @@ fn render_code(node: &Value) -> io::Result<()> {
     let ps = SyntaxSet::load_defaults_newlines();
     let ts = ThemeSet::load_defaults();
 
+    let config = get_config();
     let syntax = ps
         .find_syntax_by_extension(lang)
         .unwrap_or_else(|| ps.find_syntax_plain_text());
-    let mut h = HighlightLines::new(syntax, &ts.themes["Solarized (dark)"]);
+    let mut h = HighlightLines::new(syntax, &ts.themes[&config.code_highlight_theme]);
 
     // Print language in italic gray # TODO: Make this optional
     // stdout.set_color(
@@ -458,36 +537,41 @@ fn render_thematic_break() -> io::Result<()> {
 }
 
 fn render_link(node: &Value) -> io::Result<()> {
+    let config = get_config();
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     let url = node["url"].as_str().unwrap_or("");
 
-    // Add a space before the link reference
-    print!(" ");
-    // Start OSC 8 hyperlink
-    print!("\x1B]8;;{}\x1B\\", url);
+    if config.render_links {
+        render_children(node)?;
+    } else {
+        // Add a space before the link reference
+        print!(" ");
+        // Start OSC 8 hyperlink
+        print!("\x1B]8;;{}\x1B\\", url);
 
-    stdout.set_color(
-        ColorSpec::new()
-            .set_fg(Some(Color::Blue))
-            .set_underline(true),
-    )?;
+        stdout.set_color(
+            ColorSpec::new()
+                .set_fg(Some(Color::Blue))
+                .set_underline(true),
+        )?;
 
-    render_children(node)?;
+        render_children(node)?;
 
-    stdout.reset()?;
+        stdout.reset()?;
 
-    // End OSC 8 hyperlink
-    print!("\x1B]8;;\x1B\\");
+        // End OSC 8 hyperlink
+        print!("\x1B]8;;\x1B\\");
 
-    // Add a space after the link reference
-    print!(" ");
+        // Add a space after the link reference
+        print!(" ");
+    }
 
     Ok(())
 }
 
 fn render_image(node: &Value) -> io::Result<()> {
-    if NO_IMAGES.load(Ordering::Relaxed) {
-        // If --no-images is set, just print the image alt text
+    let config = get_config();
+    if !config.render_images {
         println!("[Image: {}]", node["alt"].as_str().unwrap_or(""));
         return Ok(());
     }
@@ -507,15 +591,14 @@ fn render_image(node: &Value) -> io::Result<()> {
         return Ok(()); // Silently ignore if the file doesn't exist
     }
 
-    // Attempt to render the image using viuer
-    let config = Config {
+    let viuer_config = viuer::Config {
         absolute_offset: false,
-        width: Some(40),
-        height: Some(13),
+        width: config.max_image_width,
+        height: config.max_image_height,
         ..Default::default()
     };
 
-    if let Err(_) = viuer::print_from_file(local_path, &config) {
+    if let Err(_) = viuer::print_from_file(&local_path, &viuer_config) {
         // Silently ignore rendering errors
     }
 
@@ -878,4 +961,38 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
         stdout.reset()?;
         Ok(())
     }
+}
+
+fn generate_default_config() -> io::Result<()> {
+    let config_dir = if cfg!(target_os = "macos") {
+        home_dir()
+            .ok_or_else(|| {
+                io::Error::new(io::ErrorKind::NotFound, "Could not find home directory")
+            })?
+            .join(".config")
+    } else {
+        dirs::config_dir().ok_or_else(|| {
+            io::Error::new(io::ErrorKind::NotFound, "Could not find config directory")
+        })?
+    };
+
+    let smd_config_dir = config_dir.join("smd");
+
+    // Create all directories in the path if they don't exist
+    fs::create_dir_all(&smd_config_dir)?;
+
+    let config_path = smd_config_dir.join("config.toml");
+
+    let default_config = Config::default();
+    let toml = toml::to_string_pretty(&default_config).map_err(|e| {
+        io::Error::new(
+            io::ErrorKind::Other,
+            format!("Failed to serialize config: {}", e),
+        )
+    })?;
+
+    fs::write(&config_path, toml)?;
+
+    println!("Default configuration file created at {:?}", config_path);
+    Ok(())
 }

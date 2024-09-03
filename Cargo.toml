@@ -38,6 +38,8 @@ tempfile = "3.12.0"
 lazy_static = "1.5.0"
 include_dir = "0.7.4"
 openssl-sys = { version = "0.9", features = ["vendored"] }
+toml = "0.8.19"
+dirs = "5.0.1"
 
 
 # The profile that 'cargo dist' will build with
@@ -45,8 +47,6 @@ openssl-sys = { version = "0.9", features = ["vendored"] }
 inherits = "release"
 lto = "thin"
 
-[dist]
-allow-dirty = ["ci", "msi"]
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]

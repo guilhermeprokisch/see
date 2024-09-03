@@ -28,6 +28,7 @@ As the project evolved, support for more complex Markdown features was added. Th
 - Nested list support
 - Blockquote styling
 - And more adding soon!
+
 ## Installation
 
 There are several ways to install smd:
@@ -142,6 +143,40 @@ smd --help
 ```
 
 This command will render smd's main documentation file `/docs`, giving you a practical example of smd in action and providing detailed information about its usage and features.
+
+# smd (Simple Markdown Viewer)
+
+...
+
+## Configuration
+
+smd supports user-defined configuration files. You can customize various aspects of the rendering process by creating a `config.toml` file in the following location:
+
+- On Linux and macOS: `~/.config/smd/config.toml`
+- On Windows: `C:\Users\<USERNAME>\AppData\Roaming\smd\config.toml`
+
+You can generate a default configuration file by running:
+
+```bash
+smd --generate-config
+```
+
+Here's an example of what you can configure:
+
+```toml
+theme = "default"
+code_highlight_theme = "Solarized (dark)"
+max_image_width = 40
+max_image_height = 13
+disable_images = false
+disable_links = false
+```
+
+- `theme`: Overall color scheme (default: "default")
+- `code_highlight_theme`: Theme for code syntax highlighting (default: "Solarized (dark)")
+- `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
+- `disable_images`: If true, images will not be rendered
+- `disable_links`: If true, links will not be clickable
 
 ## Contributing
 
