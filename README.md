@@ -4,7 +4,7 @@
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
 
 > [!WARNING]  
->**DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution >and please report any issues you encounter.**
+>**DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
 smd is a minimalistic Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering. It provides a visually appealing way to view Markdown content directly in your console.
 
@@ -49,10 +49,10 @@ This will download, compile, and install the latest version of smd. Make sure yo
 You can quickly install smd using our shell script:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.9/smd-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.10/smd-installer.sh | sh
 ```
 
-**DISCLAIMER: The version number in the URL above (v0.2.9) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
+**DISCLAIMER: The version number in the URL above (v0.2.10) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
 
 ### 3. Install prebuilt binaries via Homebrew
 
