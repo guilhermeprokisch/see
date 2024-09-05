@@ -1,6 +1,6 @@
 [package]
 name = "smd"
-version = "0.2.10"
+version = "0.3.0"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/smd"
@@ -18,22 +18,13 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 termcolor = "1.1"
 markdown = { version = "1.0.0-alpha.20", features = ["json"] }
-syntect = { version = "5.2.0", features = [
-  "parsing",
-  "regex-fancy",
-  "default-themes",
-  "default-syntaxes",
-] }
 emojis = "0.6.3"
 viuer = "0.7.1"
 url = "2.5.2"
 reqwest = { version = "0.12.7", features = ["blocking"] }
 sha2 = "0.10.8"
-term_size = "0.3.2"
 crossterm = "0.28.1"
 image = "0.25.2"
-textwrap = "0.16.1"
-terminal_size = "0.3.0"
 tempfile = "3.12.0"
 lazy_static = "1.5.0"
 include_dir = "0.7.4"
@@ -43,9 +34,7 @@ dirs = "5.0.1"
 tree-sitter = "0.23.0"
 tree-sitter-highlight = "0.23.0"
 inkjet = { version = "0.10.5", features = ["all_languages", "theme"] }
-ansi_term = "0.12.1"
 ansi_colours = "1.2.3"
-termion = "4.0.2"
 
 
 # The profile that 'cargo dist' will build with
