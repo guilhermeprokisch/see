@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, Read};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -152,35 +152,10 @@ fn main() -> io::Result<()> {
         // Read from file
         fs::read_to_string(path)?
     } else {
-        // Read from stdin, supporting both piped and interactive input
-        let stdin = io::stdin();
-        let mut reader = BufReader::new(stdin.lock());
+        // Read from stdin
         let mut buffer = String::new();
-
-        loop {
-            let bytes_read = reader.read_line(&mut buffer)?;
-            if bytes_read == 0 {
-                break;
-            }
-
-            // Process each line as it comes in
-            let ast = markdown::to_mdast(&buffer, &markdown::ParseOptions::gfm()).unwrap();
-            let mut json: Value =
-                serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
-
-            process_definitions(&json);
-            process_footnotes(&json);
-            modify_heading_ast(&mut json);
-            modify_list_item_ast(&mut json);
-
-            render_markdown(&json)?;
-
-            // Clear the buffer for the next line
-            buffer.clear();
-        }
-
-        // Return an empty string since we've already processed the input
-        String::new()
+        io::stdin().read_to_string(&mut buffer)?;
+        buffer
     };
 
     // Create a temporary directory for images
@@ -190,18 +165,15 @@ fn main() -> io::Result<()> {
     // Set the global image folder
     IMAGE_FOLDER.set(image_folder).unwrap();
 
-    // Only process content if we're not reading from stdin
-    if !content.is_empty() {
-        let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
-        let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
+    let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
+    let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
 
-        process_definitions(&json);
-        process_footnotes(&json);
-        modify_heading_ast(&mut json);
-        modify_list_item_ast(&mut json);
+    process_definitions(&json);
+    process_footnotes(&json);
+    modify_heading_ast(&mut json);
+    modify_list_item_ast(&mut json);
 
-        render_markdown(&json)?;
-    }
+    render_markdown(&json)?;
 
     LINK_DEFINITIONS.lock().unwrap().clear();
     Ok(())
@@ -413,24 +385,26 @@ fn render_code(node: &Value) -> std::io::Result<()> {
     let lang = node["lang"].as_str().unwrap_or("txt");
 
     let mut highlighter = Highlighter::new();
-
-    // println!("Debug: Rendering code block with language: {}", lang);
-    // println!("Debug: Code content: \n{}", code);
-
-    let language = match lang {
-        "rs" | "rust" => Language::Rust,
-        "py" | "python" => Language::Python,
-        "js" | "javascript" => Language::Javascript,
-        "sh" | "bash" => Language::Bash,
-        _ => Language::Plaintext,
-    };
-
+    let language = Language::from_token(lang).unwrap_or(Language::Plaintext);
     let theme: Theme = create_comprehensive_theme();
     let formatter = TerminalFormatter::new(theme);
 
-    highlighter
-        .highlight_to_writer(language, &formatter, code, &mut std::io::stdout())
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+    // Get the current indentation
+    let indent = get_indent();
+
+    // Split the code into lines
+    let lines: Vec<&str> = code.lines().collect();
+
+    for line in lines {
+        // Print the indentation before each line
+        print!("{}", indent);
+
+        highlighter
+            .highlight_to_writer(language, &formatter, line, &mut std::io::stdout())
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
+
+        println!();
+    }
 
     println!();
     Ok(())
