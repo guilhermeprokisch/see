@@ -11,8 +11,7 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::env;
 use std::fs;
-use std::io::Write;
-use std::io::{self, Read};
+use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -29,6 +28,8 @@ use inkjet::{Highlighter, Language, Result as InkjetResult};
 
 use std::cell::RefCell;
 use std::fmt::Write as FmtWrite;
+use std::sync::mpsc;
+use std::thread;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use url::Url;
@@ -148,16 +149,6 @@ fn main() -> io::Result<()> {
     DEBUG_MODE.store(debug_mode, Ordering::Relaxed);
     NO_IMAGES.store(get_config().render_images, Ordering::Relaxed);
 
-    let content = if let Some(path) = file_path {
-        // Read from file
-        fs::read_to_string(path)?
-    } else {
-        // Read from stdin
-        let mut buffer = String::new();
-        io::stdin().read_to_string(&mut buffer)?;
-        buffer
-    };
-
     // Create a temporary directory for images
     let temp_dir = TempDir::new()?;
     let image_folder = temp_dir.path().to_str().unwrap().to_string();
@@ -165,7 +156,53 @@ fn main() -> io::Result<()> {
     // Set the global image folder
     IMAGE_FOLDER.set(image_folder).unwrap();
 
-    let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
+    if let Some(path) = file_path {
+        // Read from file
+        let content = fs::read_to_string(path)?;
+        render_markdown_content(&content)?;
+    } else {
+        // Read from stdin in a streaming manner
+        let (tx, rx) = mpsc::channel();
+
+        // Spawn a thread to read input
+        thread::spawn(move || {
+            let stdin = io::stdin();
+            let mut reader = stdin.lock();
+            let mut buffer = String::new();
+
+            while let Ok(bytes_read) = reader.read_line(&mut buffer) {
+                if bytes_read == 0 {
+                    break; // EOF
+                }
+                if let Err(_) = tx.send(buffer.clone()) {
+                    break; // Channel closed
+                }
+                buffer.clear();
+            }
+        });
+
+        // Process the streamed input
+        let mut accumulated_content = String::new();
+        let mut stdout = io::stdout();
+
+        for line in rx.iter() {
+            accumulated_content.push_str(&line);
+
+            // Render the new line
+            if let Err(e) = render_markdown_content(&line) {
+                eprintln!("Error rendering markdown: {}", e);
+            }
+
+            stdout.flush()?;
+        }
+    }
+
+    LINK_DEFINITIONS.lock().unwrap().clear();
+    Ok(())
+}
+
+fn render_markdown_content(content: &str) -> io::Result<()> {
+    let ast = markdown::to_mdast(content, &markdown::ParseOptions::gfm()).unwrap();
     let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
 
     process_definitions(&json);
@@ -174,8 +211,7 @@ fn main() -> io::Result<()> {
     modify_list_item_ast(&mut json);
 
     render_markdown(&json)?;
-
-    LINK_DEFINITIONS.lock().unwrap().clear();
+    render_footnotes()?;
     Ok(())
 }
 
