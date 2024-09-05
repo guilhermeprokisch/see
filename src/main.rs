@@ -12,7 +12,7 @@ use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io::Write;
-use std::io::{self, Read};
+use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -20,11 +20,15 @@ use std::sync::Arc;
 use std::sync::Mutex;
 use std::sync::OnceLock;
 use std::sync::RwLock;
-use syntect::easy::HighlightLines;
-use syntect::highlighting::{Style, ThemeSet};
-use syntect::parsing::SyntaxSet;
-use syntect::util::LinesWithEndings;
 use tempfile::TempDir;
+
+use inkjet::constants::HIGHLIGHT_NAMES;
+use inkjet::formatter::{Formatter, Style, Theme};
+use inkjet::tree_sitter_highlight::HighlightEvent;
+use inkjet::{Highlighter, Language, Result as InkjetResult};
+
+use std::cell::RefCell;
+use std::fmt::Write as FmtWrite;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
 use url::Url;
@@ -148,10 +152,35 @@ fn main() -> io::Result<()> {
         // Read from file
         fs::read_to_string(path)?
     } else {
-        // Read from stdin
+        // Read from stdin, supporting both piped and interactive input
+        let stdin = io::stdin();
+        let mut reader = BufReader::new(stdin.lock());
         let mut buffer = String::new();
-        io::stdin().read_to_string(&mut buffer)?;
-        buffer
+
+        loop {
+            let bytes_read = reader.read_line(&mut buffer)?;
+            if bytes_read == 0 {
+                break;
+            }
+
+            // Process each line as it comes in
+            let ast = markdown::to_mdast(&buffer, &markdown::ParseOptions::gfm()).unwrap();
+            let mut json: Value =
+                serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
+
+            process_definitions(&json);
+            process_footnotes(&json);
+            modify_heading_ast(&mut json);
+            modify_list_item_ast(&mut json);
+
+            render_markdown(&json)?;
+
+            // Clear the buffer for the next line
+            buffer.clear();
+        }
+
+        // Return an empty string since we've already processed the input
+        String::new()
     };
 
     // Create a temporary directory for images
@@ -161,15 +190,18 @@ fn main() -> io::Result<()> {
     // Set the global image folder
     IMAGE_FOLDER.set(image_folder).unwrap();
 
-    let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
-    let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
+    // Only process content if we're not reading from stdin
+    if !content.is_empty() {
+        let ast = markdown::to_mdast(&content, &markdown::ParseOptions::gfm()).unwrap();
+        let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap()).unwrap();
 
-    process_definitions(&json);
-    process_footnotes(&json);
-    modify_heading_ast(&mut json);
-    modify_list_item_ast(&mut json);
+        process_definitions(&json);
+        process_footnotes(&json);
+        modify_heading_ast(&mut json);
+        modify_list_item_ast(&mut json);
 
-    render_markdown(&json)?;
+        render_markdown(&json)?;
+    }
 
     LINK_DEFINITIONS.lock().unwrap().clear();
     Ok(())
@@ -317,62 +349,91 @@ fn parse_emoji(word: &str) -> Option<String> {
     None
 }
 
-fn render_code(node: &Value) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+struct TerminalFormatter {
+    theme: Theme,
+    stdout: RefCell<StandardStream>,
+}
+
+impl TerminalFormatter {
+    fn new(theme: Theme) -> Self {
+        Self {
+            theme,
+            stdout: RefCell::new(StandardStream::stdout(ColorChoice::Always)),
+        }
+    }
+
+    fn color_from_hex(&self, hex: &str) -> Color {
+        let rgb = color_from_hex(hex).unwrap_or((255, 255, 255));
+        Color::Rgb(rgb.0, rgb.1, rgb.2)
+    }
+}
+
+impl Formatter for TerminalFormatter {
+    fn write<W>(&self, source: &str, _writer: &mut W, event: HighlightEvent) -> InkjetResult<()>
+    where
+        W: FmtWrite,
+    {
+        match event {
+            HighlightEvent::Source { start, end } => {
+                let text = &source[start..end];
+                let mut stdout = self.stdout.borrow_mut();
+                stdout.write_all(text.as_bytes())?;
+                stdout.flush()?;
+            }
+            HighlightEvent::HighlightStart(highlight) => {
+                let style_name = HIGHLIGHT_NAMES[highlight.0];
+                let style = self.theme.get_style(style_name);
+                let color = self.color_from_hex(&style.primary_color);
+                self.stdout
+                    .borrow_mut()
+                    .set_color(ColorSpec::new().set_fg(Some(color)))?;
+            }
+            HighlightEvent::HighlightEnd => {
+                self.stdout.borrow_mut().reset()?;
+            }
+        }
+        Ok(())
+    }
+}
+
+fn color_from_hex(hex: &str) -> Option<(u8, u8, u8)> {
+    if hex.len() != 7 || !hex.starts_with('#') {
+        return None;
+    }
+
+    let r = u8::from_str_radix(&hex[1..3], 16).ok()?;
+    let g = u8::from_str_radix(&hex[3..5], 16).ok()?;
+    let b = u8::from_str_radix(&hex[5..7], 16).ok()?;
+
+    Some((r, g, b))
+}
+
+fn render_code(node: &Value) -> std::io::Result<()> {
     let code = node["value"].as_str().unwrap_or("");
     let lang = node["lang"].as_str().unwrap_or("txt");
 
-    // Load these once at the start of your program
-    let ps = SyntaxSet::load_defaults_newlines();
-    let ts = ThemeSet::load_defaults();
+    let mut highlighter = Highlighter::new();
 
-    let config = get_config();
-    let syntax = ps
-        .find_syntax_by_extension(lang)
-        .unwrap_or_else(|| ps.find_syntax_plain_text());
-    let mut h = HighlightLines::new(syntax, &ts.themes[&config.code_highlight_theme]);
+    // println!("Debug: Rendering code block with language: {}", lang);
+    // println!("Debug: Code content: \n{}", code);
 
-    // Print language in italic gray # TODO: Make this optional
-    // stdout.set_color(
-    //     ColorSpec::new()
-    //         .set_fg(Some(Color::Ansi256(242)))
-    //         .set_italic(true),
-    // )?;
-    // println!("{}{}", get_indent(), lang);
-    // stdout.reset()?;
+    let language = match lang {
+        "rs" | "rust" => Language::Rust,
+        "py" | "python" => Language::Python,
+        "js" | "javascript" => Language::Javascript,
+        "sh" | "bash" => Language::Bash,
+        _ => Language::Plaintext,
+    };
 
-    // Add extra indentation for code content
-    let code_indent = get_indent() + "  ";
+    let theme: Theme = create_comprehensive_theme();
+    let formatter = TerminalFormatter::new(theme);
 
-    for line in LinesWithEndings::from(code) {
-        let highlighted = match h.highlight_line(line, &ps) {
-            Ok(h) => h,
-            Err(e) => return Err(io::Error::new(io::ErrorKind::Other, e.to_string())),
-        };
+    highlighter
+        .highlight_to_writer(language, &formatter, code, &mut std::io::stdout())
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e.to_string()))?;
 
-        print!("{}", code_indent);
-        for (style, text) in highlighted.iter() {
-            let color = style_to_termcolor(style);
-            stdout.set_color(ColorSpec::new().set_fg(color))?;
-            write!(stdout, "{}", text)?;
-        }
-        stdout.reset()?;
-    }
     println!();
-
     Ok(())
-}
-
-fn style_to_termcolor(style: &Style) -> Option<Color> {
-    if style.foreground.a == 0 {
-        None
-    } else {
-        Some(Color::Rgb(
-            style.foreground.r,
-            style.foreground.g,
-            style.foreground.b,
-        ))
-    }
 }
 
 fn render_table(node: &Value) -> io::Result<()> {
@@ -1045,4 +1106,724 @@ fn generate_default_config() -> io::Result<()> {
 
     println!("Default configuration file created at {:?}", config_path);
     Ok(())
+}
+
+pub fn create_comprehensive_theme() -> Theme {
+    let mut theme = Theme::new(Style {
+        primary_color: "#FFFFFF".to_string(),
+        secondary_color: "#1E1E1E".to_string(),
+        modifiers: Default::default(),
+    });
+
+    // Basic styles
+    theme.add_style(
+        "attribute",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "type",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "type.builtin",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "type.enum",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "type.enum.variant",
+        Style {
+            primary_color: "#4FC1FF".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constructor",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.builtin",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.builtin.boolean",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.character",
+        Style {
+            primary_color: "#CE9178".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.character.escape",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.numeric",
+        Style {
+            primary_color: "#B5CEA8".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.numeric.integer",
+        Style {
+            primary_color: "#B5CEA8".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "constant.numeric.float",
+        Style {
+            primary_color: "#B5CEA8".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string",
+        Style {
+            primary_color: "#CE9178".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string.regexp",
+        Style {
+            primary_color: "#D16969".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string.special",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string.special.path",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string.special.url",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "string.special.symbol",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "escape",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "comment",
+        Style {
+            primary_color: "#6A9955".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "comment.line",
+        Style {
+            primary_color: "#6A9955".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "comment.block",
+        Style {
+            primary_color: "#6A9955".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "comment.block.documentation",
+        Style {
+            primary_color: "#6A9955".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "variable",
+        Style {
+            primary_color: "#9CDCFE".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "variable.builtin",
+        Style {
+            primary_color: "#9CDCFE".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "variable.parameter",
+        Style {
+            primary_color: "#9CDCFE".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "variable.other",
+        Style {
+            primary_color: "#9CDCFE".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "variable.other.member",
+        Style {
+            primary_color: "#9CDCFE".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "label",
+        Style {
+            primary_color: "#C8C8C8".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "punctuation",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "punctuation.delimiter",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "punctuation.bracket",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "punctuation.special",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control.conditional",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control.repeat",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control.import",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control.return",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.control.exception",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.operator",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.directive",
+        Style {
+            primary_color: "#C586C0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.function",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.storage",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.storage.type",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "keyword.storage.modifier",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "operator",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "function",
+        Style {
+            primary_color: "#DCDCAA".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "function.builtin",
+        Style {
+            primary_color: "#DCDCAA".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "function.method",
+        Style {
+            primary_color: "#DCDCAA".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "function.macro",
+        Style {
+            primary_color: "#DCDCAA".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "function.special",
+        Style {
+            primary_color: "#DCDCAA".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "tag",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "tag.builtin",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "namespace",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "special",
+        Style {
+            primary_color: "#D7BA7D".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+
+    // Markup styles
+    theme.add_style(
+        "markup",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.marker",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.1",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.2",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.3",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.4",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.5",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.heading.6",
+        Style {
+            primary_color: "#569CD6".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.list",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.list.unnumbered",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.list.numbered",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.list.checked",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.list.unchecked",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.bold",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.italic",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.strikethrough",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.link",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.link.url",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.link.label",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.link.text",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.quote",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.raw",
+        Style {
+            primary_color: "#CE9178".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.raw.inline",
+        Style {
+            primary_color: "#CE9178".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "markup.raw.block",
+        Style {
+            primary_color: "#CE9178".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+
+    // Diff styles
+    theme.add_style(
+        "diff",
+        Style {
+            primary_color: "#D4D4D4".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "diff.plus",
+        Style {
+            primary_color: "#6A9955".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "diff.minus",
+        Style {
+            primary_color: "#F44747".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "diff.delta",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+    theme.add_style(
+        "diff.delta.moved",
+        Style {
+            primary_color: "#4EC9B0".to_string(),
+            secondary_color: "".to_string(),
+            modifiers: Default::default(),
+        },
+    );
+
+    theme
 }

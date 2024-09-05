@@ -40,6 +40,9 @@ include_dir = "0.7.4"
 openssl-sys = { version = "0.9", features = ["vendored"] }
 toml = "0.8.19"
 dirs = "5.0.1"
+tree-sitter = "0.23.0"
+tree-sitter-highlight = "0.23.0"
+inkjet = { version = "0.10.5", features = ["all_languages", "theme"] }
 
 
 # The profile that 'cargo dist' will build with
@@ -58,7 +61,13 @@ installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
 tap = "guilhermeprokisch/homebrew-smd"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-unknown-linux-musl", "x86_64-pc-windows-msvc"]
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-unknown-linux-musl",
+  "x86_64-pc-windows-msvc",
+]
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Publish jobs to run in CI
