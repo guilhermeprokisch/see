@@ -34,10 +34,6 @@ As the project evolved, support for more complex Markdown features was added. Th
 
 There are several ways to install smd:
 
-## Installation
-
-There are several ways to install smd:
-
 ### 1. Install prebuilt binaries via shell script (Recommended)
 
 The easiest and fastest way to install smd is by using our shell script:
