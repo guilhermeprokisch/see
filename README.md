@@ -34,25 +34,25 @@ As the project evolved, support for more complex Markdown features was added. Th
 
 There are several ways to install smd:
 
-### 1. Using Cargo (Recommended)
+### 1. Install prebuilt binaries via shell script (Recommended)
 
-You can install smd directly from crates.io using Cargo:
-
-```bash
-cargo install smd
-```
-
-This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
-
-### 2. Install prebuilt binaries via shell script
-
-You can quickly install smd using our shell script:
+The easiest and fastest way to install smd is by using our shell script:
 
 ```sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/smd/releases/download/v0.2.10/smd-installer.sh | sh
 ```
 
 **DISCLAIMER: The version number in the URL above (v0.2.10) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/smd/releases) for the most recent version and update the URL accordingly before running the command.**
+
+### 2. Using prebuilt binaries from GitHub releases
+
+If you prefer to manually download and install the binary:
+
+1. Visit the [smd releases page](https://github.com/guilhermeprokisch/smd/releases) on GitHub.
+2. Find the latest release version.
+3. Download the appropriate binary for your operating system and architecture.
+4. Extract the downloaded file if necessary.
+5. Move the `smd` binary to a directory in your system's PATH (e.g., `/usr/local/bin` on Unix-like systems).
 
 ### 3. Install prebuilt binaries via Homebrew
 
@@ -62,7 +62,17 @@ If you're using Homebrew, you can install smd with:
 brew install guilhermeprokisch/smd/smd
 ```
 
-### 4. Building from Source
+### 4. Using Cargo
+
+You can install smd directly from crates.io using Cargo:
+
+```bash
+cargo install smd
+```
+
+This will download, compile, and install the latest version of smd. Make sure your Rust installation is up to date.
+
+### 5. Building from Source
 
 If you prefer to build from source or want to contribute to the project:
 
@@ -82,6 +92,7 @@ If you prefer to build from source or want to contribute to the project:
    ```
 
 This will compile the project and install the `smd` binary in your Cargo bin directory, which should be in your PATH.
+
 
 ## Usage
 
@@ -161,7 +172,6 @@ smd --generate-config
 Here's an example of what you can configure:
 
 ```toml
-code_highlight_theme = "Solarized (dark)"
 max_image_width = 40
 max_image_height = 13
 render_images = true
@@ -169,7 +179,6 @@ render_links = true
 render_table_borders = false
 ```
 
-- `code_highlight_theme`: Theme for code syntax highlighting (default: "Solarized (dark)")
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
 - `render_images`: If false, images will not be rendered
 - `render_links`: If false, links will not be clickable
