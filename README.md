@@ -184,6 +184,8 @@ render_table_borders = false
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
 
+Note: smd uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) thanks to [inkjet](https://github.com/Colonial-Dev/inkjet) for syntax highlighting. Currently, only one theme is implemented, but there are plans to make smd compatible with Helix editor themes in the future, which will greatly expand customization options.
+
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request. As this project is in alpha, your input and contributions can significantly shape its development.
