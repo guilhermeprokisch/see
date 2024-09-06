@@ -4,7 +4,7 @@
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
 
 > [!WARNING]  
->**DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
+> **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
 smd is a minimalistic Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering. It provides a visually appealing way to view Markdown content directly in your console.
 
@@ -174,22 +174,6 @@ render_table_borders = false
 - `render_images`: If false, images will not be rendered
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
-
-### Available Code Highlight Themes
-
-The `code_highlight_theme` option can be set to any of the following values:
-
-- "base16-ocean.dark"
-- "base16-eighties.dark"
-- "base16-mocha.dark"
-- "base16-ocean.light"
-- "InspiredGitHub"
-- "Solarized (dark)"
-- "Solarized (light)"
-
-These are the default themes provided by the syntect library. Choose the theme that best suits your terminal's color scheme and personal preferences.
-
-Note: The actual appearance of these themes may vary slightly depending on your terminal's color settings.
 
 ## Contributing
 

@@ -40,7 +40,6 @@ static DOCS_DIR: Dir = include_dir!("$CARGO_MANIFEST_DIR/docs");
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Config {
-    pub code_highlight_theme: String,
     pub max_image_width: Option<u32>,
     pub max_image_height: Option<u32>,
     pub render_images: bool,
@@ -51,7 +50,6 @@ pub struct Config {
 impl Default for Config {
     fn default() -> Self {
         Config {
-            code_highlight_theme: "Solarized (dark)".to_string(),
             max_image_width: Some(40),
             max_image_height: Some(13),
             render_images: true,
