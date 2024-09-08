@@ -1,12 +1,12 @@
 [package]
-name = "smd"
+name = "see"
 version = "0.3.1"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
-homepage = "https://github.com/guilhermeprokisch/smd"
+homepage = "https://github.com/guilhermeprokisch/see"
 description = "A minimalistic  Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering"
 license = "MIT"
-repository = "https://github.com/guilhermeprokisch/smd"
+repository = "https://github.com/guilhermeprokisch/see"
 readme = "README.md"
 keywords = ["markdown", "terminal", "renderer", "syntax-highlighting", "emoji"]
 categories = ["command-line-utilities", "text-processing"]
@@ -52,7 +52,7 @@ ci = "github"
 # The installers to generate for each app
 installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
-tap = "guilhermeprokisch/homebrew-smd"
+tap = "guilhermeprokisch/homebrew-see"
 # Target platforms to build apps for (Rust target-triple syntax)
 targets = [
   "aarch64-apple-darwin",
