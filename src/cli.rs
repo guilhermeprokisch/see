@@ -5,28 +5,42 @@ use std::process::Command;
 use crate::config;
 use crate::constants::DOCS_DIR;
 
-pub fn parse_args(args: &[String]) -> io::Result<(bool, Option<String>)> {
-    let mut debug_mode = false;
-    let mut file_path = None;
-    for arg in &args[1..] {
-        match arg.as_str() {
-            "--debug" => debug_mode = true,
-            "--help" => {
-                return render_help();
-            }
-            "--version" => {
-                return print_version();
-            }
-            "--generate-config" => {
-                return config::generate_default_config().map(|_| (false, None));
-            }
-            _ => file_path = Some(arg.clone()),
-        }
-    }
-    Ok((debug_mode, file_path))
+pub struct CliOptions {
+    pub debug_mode: bool,
+    pub file_path: Option<String>,
+    pub show_line_numbers: bool,
 }
 
-fn render_help() -> io::Result<(bool, Option<String>)> {
+pub enum ParseResult {
+    Options(CliOptions),
+    Help,
+    Version,
+    Config,
+}
+
+pub fn parse_args(args: &[String]) -> io::Result<ParseResult> {
+    let mut options = CliOptions {
+        debug_mode: false,
+        file_path: None,
+        show_line_numbers: false,
+    };
+
+    let mut args_iter = args.iter().skip(1);
+    while let Some(arg) = args_iter.next() {
+        match arg.as_str() {
+            "--debug" => options.debug_mode = true,
+            "--line-numbers" => options.show_line_numbers = true,
+            "--help" => return Ok(ParseResult::Help),
+            "--version" => return Ok(ParseResult::Version),
+            "--generate-config" => return Ok(ParseResult::Config),
+            _ => options.file_path = Some(arg.clone()),
+        }
+    }
+
+    Ok(ParseResult::Options(options))
+}
+
+fn render_help() -> io::Result<()> {
     if let Some(file) = DOCS_DIR.get_file("main.md") {
         let content = file
             .contents_utf8()
@@ -35,7 +49,7 @@ fn render_help() -> io::Result<(bool, Option<String>)> {
         let temp_file = temp_dir.path().join("help.md");
         std::fs::write(&temp_file, content)?;
         Command::new(env::current_exe()?).arg(temp_file).status()?;
-        Ok((false, None))
+        Ok(())
     } else {
         Err(io::Error::new(
             io::ErrorKind::NotFound,
@@ -44,7 +58,25 @@ fn render_help() -> io::Result<(bool, Option<String>)> {
     }
 }
 
-fn print_version() -> io::Result<(bool, Option<String>)> {
+fn print_version() -> io::Result<()> {
     println!("smd version {}", env!("CARGO_PKG_VERSION"));
-    Ok((false, None))
+    Ok(())
+}
+
+pub fn handle_cli_result(result: ParseResult) -> io::Result<Option<CliOptions>> {
+    match result {
+        ParseResult::Options(options) => Ok(Some(options)),
+        ParseResult::Help => {
+            render_help()?;
+            Ok(None)
+        }
+        ParseResult::Version => {
+            print_version()?;
+            Ok(None)
+        }
+        ParseResult::Config => {
+            config::generate_default_config()?;
+            Ok(None)
+        }
+    }
 }

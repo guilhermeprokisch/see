@@ -1,4 +1,4 @@
-# smd (Simple Markdown Viewer)
+# smd (Simple Markdown Viewer and Code Viewer)
 
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/9ead893a-e3b2-4b0f-9945-e751ff67d3ef">
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
@@ -20,7 +20,7 @@ As the project evolved, support for more complex Markdown features was added. Th
 ## Features
 
 - Rich text rendering in the terminal
-- Syntax highlighting for code blocks
+- Syntax highlighting for code blocks and standalone code files
 - Emoji support :smile:
 - Image rendering (when possible)
 - Clickable links (in supported terminals)
@@ -93,7 +93,6 @@ If you prefer to build from source or want to contribute to the project:
 
 This will compile the project and install the `smd` binary in your Cargo bin directory, which should be in your PATH.
 
-
 ## Usage
 
 There are two main ways to use smd:
@@ -156,6 +155,35 @@ smd --help
 
 This command will render smd's main documentation file `/docs`, giving you a practical example of smd in action and providing detailed information about its usage and features.
 
+## smd as a Code Viewer (Experimental)
+
+In addition to rendering Markdown, smd serves as a powerful code viewer for the terminal. It provides an efficient way to review code directly in your console with advanced syntax highlighting and optional line numbers.
+
+Key features of smd as a code viewer include:
+
+1. **Tree-sitter Powered Highlighting**: Accurate, context-aware syntax highlighting for elegant code rendering.
+
+2. **Automatic Language Detection**: Applies appropriate highlighting based on file extension.
+
+3. **Optional Line Numbers**: Display line numbers alongside code for easy reference.
+
+4. **Multi-Language Support**: Renders a wide variety of programming languages with high accuracy.
+
+5. **Terminal-Optimized Output**: Clear display of complex code structures in the console.
+
+6. **Workflow Integration**: Excellent for quick code reviews and automated scripts.
+
+7. **Consistent Rendering**: Reliable highlighting across different language versions.
+
+Usage:
+
+```bash
+smd path/to/your/code_file.py
+smd --line-numbers path/to/your/code_file.py  # with line numbers
+```
+
+Powered by tree-sitter, smd offers a versatile and accurate tool for both documentation and code review tasks, streamlining terminal-based development workflows.
+
 ## Configuration
 
 smd supports user-defined configuration files. You can customize various aspects of the rendering process by creating a `config.toml` file in the following location:
@@ -177,12 +205,14 @@ max_image_height = 13
 render_images = true
 render_links = true
 render_table_borders = false
+show_line_numbers = true
 ```
 
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
 - `render_images`: If false, images will not be rendered
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
+- `show_line_numbers`: If true, line numbers will be shown for code files (can also be set with `--line-numbers` option)
 
 Note: smd uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) thanks to [inkjet](https://github.com/Colonial-Dev/inkjet) for syntax highlighting. Currently, only one theme is implemented, but there are plans to make smd compatible with Helix editor themes in the future, which will greatly expand customization options.
 

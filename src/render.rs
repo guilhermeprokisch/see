@@ -673,10 +673,19 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
     }
 }
 
-pub fn render_code_file(content: &str, language: &str) -> io::Result<()> {
+pub fn render_code_file(content: &str, language: &str, show_line_numbers: bool) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let lines: Vec<&str> = content.lines().collect();
+    let line_count = lines.len();
+    let max_line_num_width = line_count.to_string().len();
 
-    for line in content.lines() {
+    for (i, line) in lines.iter().enumerate() {
+        if show_line_numbers {
+            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
+            write!(stdout, "{:>width$} │ ", i + 1, width = max_line_num_width)?;
+            stdout.reset()?;
+        }
+
         if let Err(e) = highlight_code(line, language, &mut stdout) {
             // If highlighting fails, fall back to plain text
             writeln!(stdout, "{}", line)?;

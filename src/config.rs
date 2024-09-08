@@ -12,6 +12,7 @@ pub struct Config {
     pub render_images: bool,
     pub render_links: bool,
     pub render_table_borders: bool,
+    pub show_line_numbers: bool,
 }
 
 impl Default for Config {
@@ -22,6 +23,7 @@ impl Default for Config {
             render_images: true,
             render_links: true,
             render_table_borders: false,
+            show_line_numbers: true,
         }
     }
 }
@@ -97,7 +99,6 @@ pub fn generate_default_config() -> std::io::Result<()> {
     };
 
     let smd_config_dir = config_dir.join("smd");
-
     fs::create_dir_all(&smd_config_dir)?;
 
     let config_path = smd_config_dir.join("config.toml");
