@@ -157,23 +157,9 @@ This command will render smd's main documentation file `/docs`, giving you a pra
 
 ## smd as a Code Viewer (Experimental)
 
-In addition to rendering Markdown, smd serves as a powerful code viewer for the terminal. It provides an efficient way to review code directly in your console with advanced syntax highlighting and optional line numbers.
+<img width="1344" alt="image" src="https://github.com/user-attachments/assets/6bbd4a67-bf30-46a8-b502-fb29ae651b1d">
 
-Key features of smd as a code viewer include:
-
-1. **Tree-sitter Powered Highlighting**: Accurate, context-aware syntax highlighting for elegant code rendering.
-
-2. **Automatic Language Detection**: Applies appropriate highlighting based on file extension.
-
-3. **Optional Line Numbers**: Display line numbers alongside code for easy reference.
-
-4. **Multi-Language Support**: Renders a wide variety of programming languages with high accuracy.
-
-5. **Terminal-Optimized Output**: Clear display of complex code structures in the console.
-
-6. **Workflow Integration**: Excellent for quick code reviews and automated scripts.
-
-7. **Consistent Rendering**: Reliable highlighting across different language versions.
+In addition to rendering Markdown, smd serves as a powerful code viewer for the terminal. It provides an efficient way to review code directly in your console with advanced syntax highlighting powered by [tree-sitter](https://github.com/tree-sitter/tree-sitter) which gives more accurate, context-aware syntax highlighting,
 
 Usage:
 
@@ -181,8 +167,6 @@ Usage:
 smd path/to/your/code_file.py
 smd --line-numbers path/to/your/code_file.py  # with line numbers
 ```
-
-Powered by tree-sitter, smd offers a versatile and accurate tool for both documentation and code review tasks, streamlining terminal-based development workflows.
 
 ## Configuration
 
