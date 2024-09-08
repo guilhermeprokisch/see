@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 
-use crate::config::get_config;
+use crate::app::get_config;
 use crate::constants::DEBUG_MODE;
 use crate::utils::download_image;
 use crate::utils::highlight_code;
@@ -673,6 +673,34 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
     }
 }
 
+pub fn render_code_file(content: &str, language: &str) -> io::Result<()> {
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let lines: Vec<&str> = content.lines().collect();
+    let line_count = lines.len();
+    let max_line_num_width = line_count.to_string().len();
+    let config = get_config();
+
+    for (i, line) in lines.iter().enumerate() {
+        if config.show_line_numbers {
+            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
+            write!(stdout, "{:>width$} │ ", i + 1, width = max_line_num_width)?;
+            stdout.reset()?;
+        }
+
+        if let Err(e) = highlight_code(line, language, &mut stdout) {
+            // If highlighting fails, fall back to plain text
+            writeln!(stdout, "{}", line)?;
+            eprintln!(
+                "Error highlighting code: {}. Falling back to plain text for this line.",
+                e
+            );
+        }
+        writeln!(stdout)?;
+    }
+
+    Ok(())
+}
+
 pub fn get_indent() -> String {
     if let Ok(content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
         "  ".repeat(*content_indent_level)
@@ -680,4 +708,3 @@ pub fn get_indent() -> String {
         String::new() // Return empty string if lock fails
     }
 }
-

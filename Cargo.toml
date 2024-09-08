@@ -35,6 +35,7 @@ tree-sitter = "0.23.0"
 tree-sitter-highlight = "0.23.0"
 inkjet = { version = "0.10.5", features = ["all_languages", "theme"] }
 ansi_colours = "1.2.3"
+hyperpolyglot = "0.1.7"
 
 
 # The profile that 'cargo dist' will build with
