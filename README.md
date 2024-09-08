@@ -1,6 +1,10 @@
-# see(LI) - A Styled Cat and Minimalistic Markdown Viewer
+# seeLI : A Styled Cat and Minimalistic Markdown Viewer
 
 > cat you see!? Its a fancy cat! :cat:
+>
+> 
+> see cli in a style!
+
 
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/9ead893a-e3b2-4b0f-9945-e751ff67d3ef">
 <img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
