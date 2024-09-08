@@ -673,6 +673,24 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
     }
 }
 
+pub fn render_code_file(content: &str, language: &str) -> io::Result<()> {
+    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+
+    for line in content.lines() {
+        if let Err(e) = highlight_code(line, language, &mut stdout) {
+            // If highlighting fails, fall back to plain text
+            writeln!(stdout, "{}", line)?;
+            eprintln!(
+                "Error highlighting code: {}. Falling back to plain text for this line.",
+                e
+            );
+        }
+        writeln!(stdout)?;
+    }
+
+    Ok(())
+}
+
 pub fn get_indent() -> String {
     if let Ok(content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
         "  ".repeat(*content_indent_level)
@@ -680,4 +698,3 @@ pub fn get_indent() -> String {
         String::new() // Return empty string if lock fails
     }
 }
-

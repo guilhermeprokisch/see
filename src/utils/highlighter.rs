@@ -20,7 +20,6 @@ pub fn highlight_code<W: Write>(code: &str, lang: &str, writer: &mut W) -> io::R
         highlighter
             .highlight_to_writer(language, &formatter, line, writer)
             .map_err(|e| io::Error::new(io::ErrorKind::Other, e.to_string()))?;
-        writeln!(writer)?;
     }
 
     Ok(())
