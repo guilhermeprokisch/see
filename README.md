@@ -1,4 +1,4 @@
-# see(LI) - A Styled Cat and Markdown Viewer for Your CLI
+# see(LI) - A Styled Cat and Minimalistic Markdown Viewer
 
 > cat you see!? Its a fancy cat! :cat:
 
