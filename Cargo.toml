@@ -1,6 +1,6 @@
 [package]
 name = "see-cat"
-version = "0.1.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/see"
@@ -49,6 +49,7 @@ lto = "thin"
 
 # Config for 'cargo dist'
 [workspace.metadata.dist]
+formula = "see"
 # The preferred cargo-dist version to use in CI (Cargo.toml SemVer syntax)
 cargo-dist-version = "0.22.0"
 # CI backends to support
@@ -58,7 +59,12 @@ installers = ["shell", "homebrew"]
 # A GitHub repo to push Homebrew formulas to
 tap = "guilhermeprokisch/homebrew-see"
 # Target platforms to build apps for (Rust target-triple syntax)
-targets = ["aarch64-apple-darwin", "x86_64-apple-darwin", "x86_64-unknown-linux-gnu", "x86_64-pc-windows-msvc"]
+targets = [
+  "aarch64-apple-darwin",
+  "x86_64-apple-darwin",
+  "x86_64-unknown-linux-gnu",
+  "x86_64-pc-windows-msvc",
+]
 # Path that installers should place binaries in
 install-path = "CARGO_HOME"
 # Publish jobs to run in CI
