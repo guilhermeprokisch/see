@@ -2031,8 +2031,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "see"
-version = "0.3.1"
+name = "see-cat"
+version = "0.4.2"
 dependencies = [
  "ansi_colours",
  "crossterm 0.28.1",

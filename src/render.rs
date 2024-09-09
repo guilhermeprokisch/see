@@ -385,7 +385,7 @@ fn render_link(node: &Value) -> io::Result<()> {
     Ok(())
 }
 
-fn render_image(node: &Value) -> io::Result<()> {
+pub fn render_image(node: &Value) -> io::Result<()> {
     let config = get_config();
     if !config.render_images {
         println!("[Image: {}]", node["alt"].as_str().unwrap_or(""));
@@ -393,14 +393,23 @@ fn render_image(node: &Value) -> io::Result<()> {
     }
 
     let url = node["url"].as_str().unwrap_or("");
+    render_image_file(url)
+}
 
-    let local_path = if Url::parse(url).is_ok() {
-        match download_image(url) {
+pub fn render_image_file(path: &str) -> io::Result<()> {
+    let config = get_config();
+    if !config.render_images {
+        println!("[Image: {}]", path);
+        return Ok(());
+    }
+
+    let local_path = if Url::parse(path).is_ok() {
+        match download_image(path) {
             Ok(path) => path,
             Err(_) => return Ok(()), // Silently ignore download errors
         }
     } else {
-        PathBuf::from(url)
+        PathBuf::from(path)
     };
 
     if !local_path.exists() {
@@ -414,8 +423,8 @@ fn render_image(node: &Value) -> io::Result<()> {
         ..Default::default()
     };
 
-    if let Err(_) = viuer::print_from_file(&local_path, &viuer_config) {
-        // Silently ignore rendering errors
+    if let Err(e) = viuer::print_from_file(&local_path, &viuer_config) {
+        eprintln!("Error rendering image: {}", e);
     }
 
     Ok(())
