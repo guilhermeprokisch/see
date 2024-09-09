@@ -8,9 +8,21 @@
 > [!WARNING]  
 > **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
 
-see is a tool that functions as both a minimalistic Markdown renderer and a code viewer for the terminal. It provides syntax highlighting, emoji support, and image rendering capabilities, offering a visually appealing way to view both Markdown content and various code files directly in your console.
+see is a powerful file visualization tool for the terminal, offering advanced code viewing capabilities, Markdown rendering, and more. It provides syntax highlighting, emoji support, and image rendering capabilities, offering a visually appealing way to view various file types directly in your console.
 
-# Motivation
+## Features
+
+- State-of-the-art code viewing capabilities with superior syntax highlighting for a wide range of programming languages, powered by tree-sitter
+- More accurate, context-aware syntax highlighting
+- Minimalistic rich Markdown rendering in the terminal
+- Emoji support :smile:
+- Image rendering (when possible)
+- Clickable links (in supported terminals)
+- Table formatting
+- Blockquote styling
+- And more coming soon!
+
+# Motivation/History
 
 The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse:rs. This approach aims to:
 
@@ -20,17 +32,56 @@ Make your CLI experience more visually appealing and informative
 
 As the project evolved from its initial focus on Markdown, support for viewing code files was added, expanding its utility in diverse development ecosystems. Now, see is your go-to tool for seeing everything that a cat can see!
 
-## Features
+## Markdown Capabilities
 
-- Minimalistic rich markdown rendering in the terminal
-- State-of-the-art code viewing capabilities with superior syntax highlighting for a wide range of programming languages, powered by tree-sitter
-- More accurate, context-aware syntax highlighting
-- Emoji support :smile:
-- Image rendering (when possible)
-- Clickable links (in supported terminals)
-- Table formatting
-- Blockquote styling
-- And more adding soon!
+While see has expanded its focus beyond just Markdown, it still offers robust Markdown rendering capabilities:
+
+- Rich text formatting (bold, italic, strikethrough)
+- Headers and lists
+- Code blocks with syntax highlighting
+- Tables
+- Blockquotes
+- Images (when supported by the terminal)
+- Clickable links
+
+## Usage
+
+### 1. Viewing Code Files
+
+see serves as a powerful code viewer for the terminal, providing an efficient way to review code directly in your console with advanced syntax highlighting:
+
+```bash
+see path/to/your/code_file.py
+see --line-numbers path/to/your/code_file.py  # with line numbers
+```
+
+<img width="1344" alt="image" src="https://github.com/user-attachments/assets/6bbd4a67-bf30-46a8-b502-fb29ae651b1d">
+
+### 2. Rendering Markdown Files
+
+To render a Markdown file, simply pass the path to the file as an argument:
+
+```bash
+see path/to/your/markdown_file.md
+```
+
+### 3. Rendering Markdown from Piped Input
+
+see can also read Markdown content from standard input:
+
+```bash
+echo "# Hello, *world*" | see
+cat README.md | see  # Render a file's content
+curl -sL https://raw.githubusercontent.com/guilhermeprokisch/see/master/README.md | see  # Render a remote Markdown file
+```
+
+### 4. Viewing see's Own Documentation
+
+You can view see's documentation directly in your terminal by running:
+
+```bash
+see --help
+```
 
 ## Installation
 
@@ -41,10 +92,10 @@ There are several ways to install see:
 The easiest and fastest way to install see is by using our shell script:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.2.10/see-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.1.0/see-installer.sh | sh
 ```
 
-**DISCLAIMER: The version number in the URL above (v0.2.10) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.**
+**DISCLAIMER: The version number in the URL above (v0.1.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.**
 
 ### 2. Using prebuilt binaries from GitHub releases
 
@@ -156,19 +207,6 @@ see --help
 ```
 
 This command will render see's main documentation file `/docs`, giving you a practical example of see in action and providing detailed information about its usage and features.
-
-## see as a Code Viewer (Experimental)
-
-<img width="1344" alt="image" src="https://github.com/user-attachments/assets/6bbd4a67-bf30-46a8-b502-fb29ae651b1d">
-
-In addition to rendering Markdown, see serves as a powerful code viewer for the terminal. It provides an efficient way to review code directly in your console with advanced syntax highlighting powered by [tree-sitter](https://github.com/tree-sitter/tree-sitter) which gives more accurate, context-aware syntax highlighting,
-
-Usage:
-
-```bash
-see path/to/your/code_file.py
-see --line-numbers path/to/your/code_file.py  # with line numbers
-```
 
 ## Configuration
 
