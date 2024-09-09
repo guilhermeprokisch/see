@@ -1,6 +1,6 @@
 [package]
 name = "see-cat"
-version = "0.4.2"
+version = "0.5.0"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/see"
@@ -40,6 +40,7 @@ tree-sitter-highlight = "0.23.0"
 inkjet = { version = "0.10.5", features = ["all_languages", "theme"] }
 ansi_colours = "1.2.3"
 hyperpolyglot = "0.1.7"
+devicons = "0.1.0"
 
 
 # The profile that 'cargo dist' will build with
