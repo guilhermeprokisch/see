@@ -109,7 +109,7 @@ brew install guilhermeprokisch/see/see
 You can install see directly from crates.io using Cargo:
 
 ```bash
-cargo install see
+cargo install see-cat
 ```
 
 This will download, compile, and install the latest version of see. Make sure your Rust installation is up to date.
