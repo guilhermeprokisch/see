@@ -1,4 +1,4 @@
-# see(LI) - A Styled Cat and Minimalistic Markdown Viewer
+# see - See a cute cat
 
 > cat you see!? Its a fancy cat! :cat:
 
