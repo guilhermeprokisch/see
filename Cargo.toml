@@ -8,14 +8,7 @@ description = "A cute cat(1)"
 license = "MIT"
 repository = "https://github.com/guilhermeprokisch/see"
 readme = "README.md"
-keywords = [
-  "markdown",
-  "cat",
-  "terminal",
-  "renderer",
-  "syntax-highlighting",
-  "emoji",
-]
+keywords = ["markdown", "cat", "terminal", "viewer", "syntax-highlighting"]
 categories = ["command-line-utilities", "text-processing"]
 include = ["src/**/*", "docs/**/*", "Cargo.toml"]
 
