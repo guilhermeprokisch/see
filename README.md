@@ -1,4 +1,4 @@
-# see - See a cute cat
+# See, a cute cat.
 
 > cat you see!? Its a fancy cat! :cat:
 
@@ -12,7 +12,7 @@ see is a tool that functions as both a minimalistic Markdown renderer and a code
 
 # Motivation
 
-The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browsers. This approach aims to:
+The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse:rs. This approach aims to:
 
 Provide a unified documentation and code viewing format accessible across different environments
 Enable quick viewing and editing of CLI documentation and code files from anywhere
