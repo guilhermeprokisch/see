@@ -2,8 +2,11 @@
 
 > cat you see!? Its a fancy cat! :cat:
 
-<img width="1482" alt="image" src="https://github.com/user-attachments/assets/9ead893a-e3b2-4b0f-9945-e751ff67d3ef">
-<img width="1482" alt="image" src="https://github.com/user-attachments/assets/8411f297-f13f-47b6-99f4-b4579531edcb">
+<img width="1363" alt="image" src="https://github.com/user-attachments/assets/b4c3c3ef-8ba5-4ab5-8a3d-55556ca02536">
+<img width="1363" alt="image" src="https://github.com/user-attachments/assets/c5e31ed4-8781-4aca-99a2-3fbe9dfe4add">
+<img width="1363" alt="image" src="https://github.com/user-attachments/assets/bd253204-deca-4756-bbba-60272e0a367c">
+
+
 
 > [!WARNING]  
 > **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
