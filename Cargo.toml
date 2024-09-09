@@ -1,17 +1,28 @@
 [package]
-name = "see"
-version = "0.3.1"
+name = "see-cat"
+version = "0.1.0"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/see"
-description = "A minimalistic  Markdown renderer for the terminal with syntax highlighting, emoji support, and image rendering"
+description = "A cute cat(1)"
 license = "MIT"
 repository = "https://github.com/guilhermeprokisch/see"
 readme = "README.md"
-keywords = ["markdown", "terminal", "renderer", "syntax-highlighting", "emoji"]
+keywords = [
+  "markdown",
+  "cat",
+  "terminal",
+  "renderer",
+  "syntax-highlighting",
+  "emoji",
+]
 categories = ["command-line-utilities", "text-processing"]
 include = ["src/**/*", "docs/**/*", "Cargo.toml"]
 
+
+[[bin]]
+name = "see"
+path = "src/main.rs"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
