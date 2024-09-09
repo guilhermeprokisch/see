@@ -29,7 +29,7 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 
 # Motivation and Context
 
-The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
+The primary goal of **see** *(smd before v0.4.0)*  was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
 
 As the project evolved from its initial focus on Markdown, support for viewing code files was added, expanding its utility in diverse development ecosystems. Now, see is your go-to tool for seeing everything that a cat can see!
 
