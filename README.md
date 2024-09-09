@@ -1,6 +1,6 @@
 # see - See a cute cat.
 
-> cat you see!? Its a fancy cat! :cat:
+> cat you see!? It's a fancy cat! :cat:
 
 <img width="1363" alt="image" src="https://github.com/user-attachments/assets/bd253204-deca-4756-bbba-60272e0a367c">
 
