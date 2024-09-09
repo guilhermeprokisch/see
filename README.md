@@ -2,9 +2,11 @@
 
 > cat you see!? Its a fancy cat! :cat:
 
+<img width="1363" alt="image" src="https://github.com/user-attachments/assets/bd253204-deca-4756-bbba-60272e0a367c">
+
+Markdown it's special 🐈
 <img width="1363" alt="image" src="https://github.com/user-attachments/assets/b4c3c3ef-8ba5-4ab5-8a3d-55556ca02536">
 <img width="1363" alt="image" src="https://github.com/user-attachments/assets/c5e31ed4-8781-4aca-99a2-3fbe9dfe4add">
-<img width="1363" alt="image" src="https://github.com/user-attachments/assets/bd253204-deca-4756-bbba-60272e0a367c">
 
 
 
@@ -27,7 +29,7 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 
 # Motivation and Context
 
-The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
+The primary goal of **see** *(smd before v0.4.0)*  was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
 
 As the project evolved from its initial focus on Markdown, support for viewing code files was added, expanding its utility in diverse development ecosystems. Now, see is your go-to tool for seeing everything that a cat can see!
 
@@ -109,7 +111,7 @@ brew install guilhermeprokisch/see/see
 You can install see directly from crates.io using Cargo:
 
 ```bash
-cargo install see
+cargo install see-cat
 ```
 
 This will download, compile, and install the latest version of see. Make sure your Rust installation is up to date.
