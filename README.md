@@ -22,7 +22,7 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 - Blockquote styling
 - And more coming soon!
 
-# Motivation/History
+# Motivation and Context
 
 The primary goal of see is to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse:rs. This approach aims to:
 
