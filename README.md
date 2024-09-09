@@ -54,8 +54,6 @@ see path/to/your/code_file.py
 see --line-numbers path/to/your/code_file.py  # with line numbers
 ```
 
-<img width="1344" alt="image" src="https://github.com/user-attachments/assets/6bbd4a67-bf30-46a8-b502-fb29ae651b1d">
-
 ### 2. Rendering Markdown Files
 
 To render a Markdown file, simply pass the path to the file as an argument:
@@ -72,14 +70,6 @@ see can also read Markdown content from standard input:
 echo "# Hello, *world*" | see
 cat README.md | see  # Render a file's content
 curl -sL https://raw.githubusercontent.com/guilhermeprokisch/see/master/README.md | see  # Render a remote Markdown file
-```
-
-### 4. Viewing see's Own Documentation
-
-You can view see's documentation directly in your terminal by running:
-
-```bash
-see --help
 ```
 
 ## Installation
@@ -144,33 +134,6 @@ If you prefer to build from source or want to contribute to the project:
    ```
 
 This will compile the project and install the `see` binary in your Cargo bin directory, which should be in your PATH.
-
-## Usage
-
-There are two main ways to use see:
-
-### 1. Rendering a Markdown file
-
-To render a Markdown file, simply pass the path to the file as an argument:
-
-```bash
-see path/to/your/markdown_file.md
-```
-
-### 2. Rendering Markdown from piped input
-
-see can also read Markdown content from standard input, allowing you to pipe content directly into it:
-
-```bash
-echo "# Hello, *world*" | see
-```
-
-This feature is particularly useful for integrating see with other commands or for quickly rendering Markdown snippets. For example:
-
-```bash
-cat README.md | see  # Render a file's content
-curl -sL https://raw.githubusercontent.com/guilhermeprokisch/see/master/README.md | see  # Render a remote Markdown file
-```
 
 #### Integration with CLI Tools
 
