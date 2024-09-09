@@ -1,4 +1,4 @@
-# See, a cute cat.
+# see - See a cute cat.
 
 > cat you see!? Its a fancy cat! :cat:
 
