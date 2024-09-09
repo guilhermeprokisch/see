@@ -280,7 +280,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          repository: "guilhermeprokisch/homebrew-smd"
+          repository: "guilhermeprokisch/homebrew-see"
           token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
       # So we have access to the formula
       - name: Fetch homebrew formulae

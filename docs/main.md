@@ -1,12 +1,12 @@
-# smd: simple Markdown and Code renderer
+# see: simple Markdown and Code renderer
 
 ## Usage
 
 ```bash
-smd [OPTIONS] [FILE]
+see [OPTIONS] [FILE]
 ```
 
-If FILE is not provided, smd reads from standard input.
+If FILE is not provided, see reads from standard input.
 
 ## Options
 
@@ -29,47 +29,47 @@ If FILE is not provided, smd reads from standard input.
 Render a Markdown file:
 
 ```bash
-smd path/to/your/markdown_file.md
+see path/to/your/markdown_file.md
 ```
 
 Render a code file without line numbers:
 
 ```bash
-smd --show-line-numbers=false path/to/your/code_file.py
+see --show-line-numbers=false path/to/your/code_file.py
 ```
 
 Render from standard input:
 
 ```bash
-echo "# Hello, world" | smd
+echo "# Hello, world" | see
 ```
 
 Generate a default configuration file:
 
 ```bash
-smd --generate-config
+see --generate-config
 ```
 
 Use a custom configuration file:
 
 ```bash
-smd --config /path/to/custom/config.toml path/to/your/markdown_file.md
+see --config /path/to/custom/config.toml path/to/your/markdown_file.md
 ```
 
 Render with maximum image dimensions:
 
 ```bash
-smd --max-image-width=60 --max-image-height=20 path/to/your/markdown_file.md
+see --max-image-width=60 --max-image-height=20 path/to/your/markdown_file.md
 ```
 
 Disable image rendering:
 
 ```bash
-smd --render-images=false path/to/your/markdown_file.md
+see --render-images=false path/to/your/markdown_file.md
 ```
 
 Enable table borders:
 
 ```bash
-smd --render-table-borders=true path/to/your/markdown_file.md
+see --render-table-borders=true path/to/your/markdown_file.md
 ```

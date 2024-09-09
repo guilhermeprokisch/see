@@ -62,7 +62,7 @@ impl AppConfig {
         } else {
             dirs::config_dir().unwrap_or_else(|| PathBuf::from("."))
         };
-        config_dir.join("smd").join("config.toml")
+        config_dir.join("see").join("config.toml")
     }
 }
 
@@ -132,7 +132,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
                     std::process::exit(0);
                 }
                 "version" => {
-                    println!("smd version {}", env!("CARGO_PKG_VERSION"));
+                    println!("see version {}", env!("CARGO_PKG_VERSION"));
                     std::process::exit(0);
                 }
                 "generate-config" => {
