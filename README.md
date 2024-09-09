@@ -212,7 +212,7 @@ Contributions are welcome! Please feel free to submit a Pull Request. As this pr
 
 ## Known Issues
 
-As this is an alpha version, you may encounter bugs or incomplete features. Some known limitations include:
+As this is an alpha version, you may encounter bugs or incomplete features.
 
 ## License
 
