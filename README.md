@@ -88,7 +88,8 @@ The easiest and fastest way to install see is by using our shell script:
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.5.0/see-cat-installer.sh | sh
 ```
 
-**DISCLAIMER: The version number in the URL above (v0.5.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.**
+> [!IMPORTANT]  
+> **DISCLAIMER: The version number in the URL above (v0.5.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.**
 
 ### 2. Using prebuilt binaries from GitHub releases
 
