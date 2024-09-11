@@ -72,15 +72,15 @@ impl Default for AppConfig {
     }
 }
 
-pub fn initialize_app() -> io::Result<(AppConfig, Option<PathBuf>)> {
-    let (config, file_path) = parse_cli_args()?;
+pub fn initialize_app() -> io::Result<(AppConfig, Option<PathBuf>, bool)> {
+    let (config, file_path, show_diff) = parse_cli_args()?;
 
     let state = AppState::new(config.clone())?;
     APP_STATE.set(state).map_err(|_| {
         io::Error::new(io::ErrorKind::AlreadyExists, "AppState already initialized")
     })?;
 
-    Ok((config, file_path))
+    Ok((config, file_path, show_diff))
 }
 
 fn parse_bool(value: Option<&str>) -> bool {
@@ -98,10 +98,12 @@ fn parse_u32(value: Option<&str>) -> Option<u32> {
     value.and_then(|v| v.parse().ok())
 }
 
-fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
+fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>, bool)> {
     let args: Vec<String> = env::args().collect();
     let mut config = AppConfig::default();
     let mut file_path = None;
+    let mut show_diff = false;
+
     let mut i = 1;
 
     while i < args.len() {
@@ -109,6 +111,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
         if arg.starts_with("--") {
             let parts: Vec<&str> = arg[2..].split('=').collect();
             match parts[0] {
+                "diff" => show_diff = true,
                 "debug" => config.debug_mode = parse_bool(parts.get(1).map(|s| *s)),
                 "max-image-width" => config.max_image_width = parse_u32(parts.get(1).map(|s| *s)),
                 "max-image-height" => config.max_image_height = parse_u32(parts.get(1).map(|s| *s)),
@@ -157,7 +160,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
         i += 1;
     }
 
-    Ok((config, file_path))
+    Ok((config, file_path, show_diff))
 }
 
 fn render_help() -> io::Result<()> {

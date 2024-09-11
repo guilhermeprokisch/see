@@ -9,7 +9,9 @@ license = "MIT"
 repository = "https://github.com/guilhermeprokisch/see"
 readme = "README.md"
 keywords = ["markdown", "cat", "terminal", "viewer", "syntax-highlighting"]
+
 categories = ["command-line-utilities", "text-processing"]
+
 include = ["src/**/*", "docs/**/*", "Cargo.toml"]
 
 
@@ -40,6 +42,7 @@ inkjet = { version = "0.10.5", features = ["all_languages", "theme"] }
 ansi_colours = "1.2.3"
 hyperpolyglot = "0.1.7"
 devicons = "0.1.0"
+unicode-width = "0.1.13"
 
 
 # The profile that 'cargo dist' will build with

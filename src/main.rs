@@ -1,6 +1,6 @@
 use crate::config::initialize_app;
 use crate::render::{render_code_file, render_image_file, render_markdown};
-use crate::utils::detect_language;
+use crate::utils::{detect_language, show_git_diff};
 use std::path::Path;
 
 mod app;
@@ -12,7 +12,7 @@ mod utils;
 
 fn main() -> std::io::Result<()> {
     // Parse CLI args, and set up the app state
-    let (config, file_path) = initialize_app()?;
+    let (config, file_path, show_diff) = initialize_app()?;
 
     if config.debug_mode {
         println!("Debug mode enabled");
@@ -22,7 +22,9 @@ fn main() -> std::io::Result<()> {
     if let Some(path) = file_path {
         let path = Path::new(&path);
 
-        if path.is_dir() {
+        if show_diff {
+            show_git_diff(path.to_str().unwrap())?;
+        } else if path.is_dir() {
             // Handle directory
             directory_tree::handle_directory(path)?;
         } else {
