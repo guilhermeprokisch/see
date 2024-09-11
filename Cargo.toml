@@ -1,6 +1,6 @@
 [package]
 name = "see-cat"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/see"
@@ -25,7 +25,10 @@ markdown = { version = "1.0.0-alpha.20", features = ["json"] }
 emojis = "0.6.3"
 viuer = "0.7.1"
 url = "2.5.2"
-reqwest = { version = "0.12.7", features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.12.7", features = [
+  "blocking",
+  "rustls-tls",
+], default-features = false }
 sha2 = "0.10.8"
 crossterm = "0.28.1"
 image = "0.25.2"
