@@ -1,5 +1,6 @@
 use crate::render::get_indent;
 use crate::utils::detect_language;
+use crate::utils::highlight_code;
 use std::cmp;
 use std::io::{self, Write};
 use std::process::Command;
@@ -100,18 +101,34 @@ fn render_diff_block(
         // Left side (old)
         if i < old_lines.len() {
             let (line_num, content) = &old_lines[i];
-            render_diff_line(&mut stdout, *line_num, content, Color::Red, half_width)?;
+            render_diff_line(
+                &mut stdout,
+                *line_num,
+                content,
+                Color::Red,
+                half_width,
+                language,
+            )?;
         } else {
             write!(&mut stdout, "{:width$}", "", width = half_width)?;
         }
 
         // Separator
+        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Rgb(128, 128, 128))))?;
         write!(&mut stdout, " │ ")?;
+        stdout.reset()?;
 
         // Right side (new)
         if i < new_lines.len() {
             let (line_num, content) = &new_lines[i];
-            render_diff_line(&mut stdout, *line_num, content, Color::Green, half_width)?;
+            render_diff_line(
+                &mut stdout,
+                *line_num,
+                content,
+                Color::Green,
+                half_width,
+                language,
+            )?;
         }
 
         writeln!(&mut stdout)?;
@@ -126,25 +143,38 @@ fn render_diff_line(
     content: &str,
     color: Color,
     width: usize,
+    language: &str,
 ) -> io::Result<()> {
     let bg_color = match color {
-        Color::Red => Color::Rgb(255, 200, 200),
-        Color::Green => Color::Rgb(200, 255, 200),
-        _ => Color::White, // Default background color for unchanged lines
+        Color::Red => Color::Rgb(50, 0, 0),
+        Color::Green => Color::Rgb(0, 50, 0),
+        _ => Color::Rgb(30, 30, 30), // Default background color for unchanged lines
     };
 
-    stdout.set_color(ColorSpec::new().set_bg(Some(bg_color)).set_fg(Some(color)))?;
+    // Render line number
+    stdout.set_color(
+        ColorSpec::new()
+            .set_bg(Some(bg_color))
+            .set_fg(Some(Color::Rgb(128, 128, 128))),
+    )?;
     write!(stdout, "{:4} ", line_num)?;
+    stdout.reset()?;
 
+    // Render content with syntax highlighting
+    stdout.set_color(ColorSpec::new().set_bg(Some(bg_color)))?;
     let mut content_width = 0;
+    let mut content_buffer = String::new();
+
     for (idx, c) in content.char_indices() {
         if content_width >= width - 5 {
-            write!(stdout, "…")?;
+            content_buffer.push('…');
             break;
         }
-        write!(stdout, "{}", c)?;
+        content_buffer.push(c);
         content_width += if c == '\t' { 4 } else { 1 };
     }
+
+    highlight_code(&content_buffer, language, stdout)?;
 
     // Pad the rest of the line
     if content_width < width - 5 {
