@@ -1,56 +1,50 @@
 use crate::config::initialize_app;
-use crate::render::{render_code_file, render_image_file, render_markdown};
-use crate::utils::detect_language;
+use crate::multi_tool::{determine_tool_names, MultiTool};
 use std::path::Path;
 
 mod app;
 mod config;
 mod constants;
 mod directory_tree;
+mod multi_tool;
 mod render;
 mod utils;
 
 fn main() -> std::io::Result<()> {
-    let (config, file_path) = initialize_app()?;
+    let (config, file_paths) = initialize_app()?;
 
     if config.debug_mode {
         eprintln!("Debug mode enabled");
         eprintln!("Configuration: {:?}", config);
     }
 
-    if let Some(path) = file_path {
-        let path = Path::new(&path);
+    let multi_tool = MultiTool::new();
 
-        if path.is_dir() {
-            // Handle directory
-            directory_tree::handle_directory(path)?;
-        } else {
-            let extension = path
-                .extension()
-                .and_then(std::ffi::OsStr::to_str)
-                .unwrap_or("");
+    match file_paths {
+        Some(paths) => {
+            for path in paths {
+                let path = Path::new(&path);
 
-            match extension.to_lowercase().as_str() {
-                "md" => {
+                if path.is_dir() {
+                    directory_tree::handle_directory(path)?;
+                } else {
+                    println!("\nFile: {}", path.display());
                     let content = app::read_content(Some(path.to_str().unwrap().to_string()))?;
-                    let json = app::parse_and_process_markdown(&content)?;
-                    render_markdown(&json)?;
-                }
-                "jpg" | "jpeg" | "png" | "gif" | "bmp" => {
-                    render_image_file(path.to_str().unwrap())?;
-                }
-                _ => {
-                    let content = app::read_content(Some(path.to_str().unwrap().to_string()))?;
-                    let language = detect_language(path.to_str().unwrap());
-                    render_code_file(&content, &language)?;
+                    let tool_names = determine_tool_names(path);
+
+                    multi_tool.visualize(&tool_names, &content, path.to_str())?;
                 }
             }
         }
-    } else {
-        // Handle stdin input (assuming it's always Markdown)
-        let content = app::read_content(None)?;
-        let json = app::parse_and_process_markdown(&content)?;
-        render_markdown(&json)?;
+        None => {
+            // Handle stdin input (assuming it's always Markdown)
+            let content = app::read_content(None)?;
+            multi_tool.visualize(
+                &["markdown".to_string(), "code".to_string()],
+                &content,
+                None,
+            )?;
+        }
     }
 
     Ok(())
