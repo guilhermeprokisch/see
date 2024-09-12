@@ -1,6 +1,6 @@
 [package]
 name = "see-cat"
-version = "0.5.2"
+version = "0.5.3"
 edition = "2021"
 authors = ["Guilherme Prokisch <guilherme.prokisch@gmail.com>"]
 homepage = "https://github.com/guilhermeprokisch/see"

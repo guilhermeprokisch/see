@@ -11,12 +11,11 @@ mod render;
 mod utils;
 
 fn main() -> std::io::Result<()> {
-    // Parse CLI args, and set up the app state
     let (config, file_path) = initialize_app()?;
 
     if config.debug_mode {
-        println!("Debug mode enabled");
-        println!("Configuration: {:?}", config);
+        eprintln!("Debug mode enabled");
+        eprintln!("Configuration: {:?}", config);
     }
 
     if let Some(path) = file_path {
