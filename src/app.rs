@@ -12,7 +12,6 @@ pub static APP_STATE: OnceLock<AppState> = OnceLock::new();
 
 pub struct AppState {
     _temp_dir: TempDir,
-    pub config: AppConfig,
 }
 
 impl AppState {
@@ -26,17 +25,8 @@ impl AppState {
 
         Ok(AppState {
             _temp_dir: temp_dir,
-            config,
         })
     }
-}
-
-pub fn get_app_state() -> &'static AppState {
-    APP_STATE.get().expect("AppState not initialized")
-}
-
-pub fn get_config() -> &'static AppConfig {
-    &get_app_state().config
 }
 
 pub fn read_content(file_path: Option<String>) -> io::Result<String> {

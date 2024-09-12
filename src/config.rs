@@ -2,11 +2,15 @@ use serde::{Deserialize, Serialize};
 use std::env;
 use std::fs;
 use std::io;
+use std::io::IsTerminal;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::OnceLock;
 
 use crate::app::{AppState, APP_STATE};
 use crate::constants::DOCS_DIR;
+
+static CONFIG: OnceLock<AppConfig> = OnceLock::new();
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct AppConfig {
@@ -17,6 +21,7 @@ pub struct AppConfig {
     pub render_table_borders: bool,
     pub show_line_numbers: bool,
     pub debug_mode: bool,
+    pub use_colors: bool,
 }
 
 impl AppConfig {
@@ -24,9 +29,9 @@ impl AppConfig {
         let config_path = Self::get_config_path();
 
         if config_path.exists() {
-            Self::load_from_file(&config_path).unwrap_or_else(|_| Self::hardcoded_defaults())
+            Self::load_from_file(&config_path).unwrap_or_else(|_| Self::default_config())
         } else {
-            Self::hardcoded_defaults()
+            Self::default_config()
         }
     }
 
@@ -42,7 +47,7 @@ impl AppConfig {
         fs::write(path, content)
     }
 
-    fn hardcoded_defaults() -> Self {
+    fn default_config() -> Self {
         AppConfig {
             max_image_width: Some(40),
             max_image_height: Some(13),
@@ -51,6 +56,7 @@ impl AppConfig {
             render_table_borders: false,
             show_line_numbers: true,
             debug_mode: false,
+            use_colors: true,
         }
     }
 
@@ -72,13 +78,25 @@ impl Default for AppConfig {
     }
 }
 
+pub fn get_config() -> &'static AppConfig {
+    CONFIG.get().expect("Config not initialized")
+}
+
 pub fn initialize_app() -> io::Result<(AppConfig, Option<PathBuf>)> {
-    let (config, file_path) = parse_cli_args()?;
+    let (mut config, file_path) = parse_cli_args()?;
+
+    if !std::io::stdout().is_terminal() {
+        config.use_colors = false;
+    }
 
     let state = AppState::new(config.clone())?;
     APP_STATE.set(state).map_err(|_| {
         io::Error::new(io::ErrorKind::AlreadyExists, "AppState already initialized")
     })?;
+
+    CONFIG
+        .set(config.clone())
+        .map_err(|_| io::Error::new(io::ErrorKind::AlreadyExists, "Config already initialized"))?;
 
     Ok((config, file_path))
 }
@@ -120,6 +138,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
                 "show-line-numbers" => {
                     config.show_line_numbers = parse_bool(parts.get(1).map(|s| *s))
                 }
+                "use-colors" => config.use_colors = parse_bool(parts.get(1).map(|s| *s)),
                 "config" => {
                     if let Some(path) = parts.get(1) {
                         if let Ok(file_config) = AppConfig::load_from_file(Path::new(path)) {

@@ -10,7 +10,7 @@ use std::sync::Mutex;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 use url::Url;
 
-use crate::app::get_config;
+use crate::config::get_config;
 use crate::constants::DEBUG_MODE;
 use crate::utils::download_image;
 use crate::utils::highlight_code;
@@ -72,8 +72,9 @@ fn render_children(node: &Value) -> io::Result<()> {
 }
 
 fn render_heading(node: &Value) -> io::Result<()> {
+    let config = get_config();
     let level = node["depth"].as_u64().unwrap_or(1) as usize;
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    let mut stdout = get_stdout();
 
     let color = match level {
         1 => Color::Cyan,
@@ -85,10 +86,14 @@ fn render_heading(node: &Value) -> io::Result<()> {
     };
 
     println!();
-    stdout.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))?;
+    if config.use_colors {
+        stdout.set_color(ColorSpec::new().set_fg(Some(color)).set_bold(true))?;
+    }
     print!("{}", get_heading_indent(level));
     render_children(node)?;
-    stdout.reset()?;
+    if config.use_colors {
+        stdout.reset()?;
+    }
     println!();
 
     if let Ok(mut current_heading_level) = CURRENT_HEADING_LEVEL.lock() {
@@ -682,18 +687,22 @@ fn render_blockquote(node: &Value) -> io::Result<()> {
     }
 }
 
-pub fn render_code_file(content: &str, language: &str) -> io::Result<()> {
-    let mut stdout = StandardStream::stdout(ColorChoice::Always);
+pub fn render_code_file(content: &str, mut language: &str) -> io::Result<()> {
+    let mut stdout = get_stdout();
     let lines: Vec<&str> = content.lines().collect();
     let line_count = lines.len();
     let max_line_num_width = line_count.to_string().len();
     let config = get_config();
 
     for (i, line) in lines.iter().enumerate() {
-        if config.show_line_numbers {
+        if config.show_line_numbers && config.use_colors {
             stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
             write!(stdout, "{:>width$} │ ", i + 1, width = max_line_num_width)?;
             stdout.reset()?;
+        }
+
+        if !config.use_colors {
+            language = "txt";
         }
 
         if let Err(e) = highlight_code(line, language, &mut stdout) {
@@ -715,5 +724,14 @@ pub fn get_indent() -> String {
         "  ".repeat(*content_indent_level)
     } else {
         String::new() // Return empty string if lock fails
+    }
+}
+
+fn get_stdout() -> Box<dyn WriteColor> {
+    let config = get_config();
+    if config.use_colors {
+        Box::new(StandardStream::stdout(ColorChoice::Always))
+    } else {
+        Box::new(StandardStream::stdout(ColorChoice::Never))
     }
 }
