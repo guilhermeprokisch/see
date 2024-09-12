@@ -1,3 +1,5 @@
+// File: src/multi_tool.rs
+
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::path::Path;
@@ -101,16 +103,16 @@ impl Tool for ImageTool {
     }
 }
 
-// Add this function to src/multi_tool.rs
 pub fn determine_tool_names(file_path: &Path) -> Vec<String> {
     let extension = file_path
         .extension()
         .and_then(std::ffi::OsStr::to_str)
-        .unwrap_or("");
+        .unwrap_or("")
+        .to_lowercase();
 
-    match extension.to_lowercase().as_str() {
+    match extension.as_str() {
         "md" => vec!["markdown".to_string()],
-        "jpg" | "jpeg" | "png" | "gif" | "bmp" => vec!["image".to_string()],
+        "jpg" | "jpeg" | "png" | "gif" | "bmp" | "webp" => vec!["image".to_string()],
         _ => vec!["code".to_string()],
     }
 }

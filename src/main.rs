@@ -1,3 +1,5 @@
+// File: src/main.rs
+
 use crate::config::initialize_app;
 use crate::multi_tool::{determine_tool_names, MultiTool};
 use std::path::Path;
@@ -29,10 +31,22 @@ fn main() -> std::io::Result<()> {
                     directory_tree::handle_directory(path)?;
                 } else {
                     println!("\nFile: {}", path.display());
-                    let content = app::read_content(Some(path.to_str().unwrap().to_string()))?;
                     let tool_names = determine_tool_names(path);
 
-                    multi_tool.visualize(&tool_names, &content, path.to_str())?;
+                    if tool_names.contains(&"image".to_string()) {
+                        // For images, we don't need to read the content
+                        multi_tool.visualize(&tool_names, "", path.to_str())?;
+                    } else {
+                        // For other files, read the content as before
+                        match app::read_content(Some(path.to_str().unwrap().to_string())) {
+                            Ok(content) => {
+                                multi_tool.visualize(&tool_names, &content, path.to_str())?;
+                            }
+                            Err(e) => {
+                                eprintln!("Error reading file {}: {}", path.display(), e);
+                            }
+                        }
+                    }
                 }
             }
         }
