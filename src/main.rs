@@ -1,5 +1,6 @@
 use crate::config::initialize_app;
 use crate::viewers::{determine_viewer, ViewerManager};
+use std::io::{self, IsTerminal};
 use std::path::Path;
 
 mod app;
@@ -19,34 +20,38 @@ fn main() -> std::io::Result<()> {
 
     let viewer_manager = ViewerManager::new();
 
-    match file_paths {
-        Some(paths) => {
+    match &file_paths {
+        Some(paths) if !paths.is_empty() => {
             for path in paths {
-                let path = Path::new(&path);
+                let path = Path::new(path);
                 if path.is_dir() {
                     directory_tree::handle_directory(path)?;
                 } else {
                     let viewer = determine_viewer(path);
                     if viewer.contains(&"image".to_string()) {
-                        viewer_manager.visualize(&viewer, "", path.to_str())?;
+                        viewer_manager.visualize(&viewer, "", Some(path.to_str().unwrap()))?;
                     } else {
-                        match app::read_content(Some(path.to_str().unwrap().to_string())) {
-                            Ok(content) => {
-                                viewer_manager.visualize(&viewer, &content, path.to_str())?;
-                            }
-                            Err(e) => {
-                                eprintln!("Error reading file {}: {}", path.display(), e);
-                            }
+                        let content = app::read_content(Some(path.to_string_lossy().into_owned()))?;
+                        if !io::stdout().is_terminal() {
+                            print!("{}", content);
+                        } else {
+                            viewer_manager.visualize(
+                                &viewer,
+                                &content,
+                                Some(path.to_str().unwrap()),
+                            )?;
                         }
                     }
                 }
             }
         }
-        None => {
+        _ => {
             let content = app::read_content(None)?;
-            // It uses the markdown viewer by default.
-            // Could be changed to use the first viewer from the config file in the future?
-            viewer_manager.visualize(&["markdown".to_string()], &content, None)?;
+            if !io::stdout().is_terminal() {
+                print!("{}", content);
+            } else {
+                viewer_manager.visualize(&["markdown".to_string()], &content, None)?;
+            }
         }
     }
 

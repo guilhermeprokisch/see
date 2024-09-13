@@ -181,9 +181,9 @@ fn parse_bool(value: Option<&str>) -> bool {
         Some(v) => match v.to_lowercase().as_str() {
             "true" | "1" => true,
             "false" | "0" => false,
-            _ => true, // Default to true if the value is not recognized
+            _ => true,
         },
-        None => true, // Default to true if no value is provided
+        None => true,
     }
 }
 
