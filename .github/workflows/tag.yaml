@@ -15,6 +15,8 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.RELEASE_BOT }}
 
       - name: Extract version from commit message
         id: extract_version
@@ -35,4 +37,4 @@ jobs:
           git tag -a v$VERSION -m "Release v$VERSION"
           git push origin v$VERSION
         env:
-          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT }}
+          GH_TOKEN: ${{ secrets.RELEASE_BOT }}
