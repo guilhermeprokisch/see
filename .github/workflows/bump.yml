@@ -20,20 +20,3 @@ jobs:
           token: ${{ secrets.RELEASE_BOT }}
           release-type: rust
           skip-github-release: true
-
-  publish-and-tag:
-    needs: release-please
-    if: needs.release-please.outputs.tag_name
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: Publish to crates.io
-        run: cargo publish --verbose --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-      - name: Push tag
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git tag -a ${{ needs.release-please.outputs.tag_name }} -m "Release ${{ needs.release-please.outputs.tag_name }}"
-          git push origin ${{ needs.release-please.outputs.tag_name }}
