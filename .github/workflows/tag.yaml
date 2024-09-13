@@ -34,3 +34,5 @@ jobs:
           git config user.email github-actions@github.com
           git tag -a v$VERSION -m "Release v$VERSION"
           git push origin v$VERSION
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT }}
