@@ -17,3 +17,4 @@ jobs:
         with:
           token: ${{ secrets.RELEASE_BOT }}
           release-type: rust
+          skip-github-release: true
