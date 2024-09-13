@@ -1,45 +1,39 @@
-// File: src/multi_tool.rs
-
+use crate::app;
+use crate::render::{render_code_file, render_image_file, render_markdown};
+use crate::utils::detect_language;
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::path::Path;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
 
-use crate::app;
-use crate::render::{render_code_file, render_image_file, render_markdown};
-use crate::utils::detect_language;
-
-pub struct MultiTool {
-    tools: HashMap<String, Box<dyn Tool>>,
+pub struct ViewerManager {
+    viewers: HashMap<String, Box<dyn Viewer>>,
 }
 
-impl MultiTool {
+impl ViewerManager {
     pub fn new() -> Self {
-        let mut multi_tool = MultiTool {
-            tools: HashMap::new(),
+        let mut viewer_manager = ViewerManager {
+            viewers: HashMap::new(),
         };
-
-        // Register default tools
-        multi_tool.register_tool("markdown", Box::new(MarkdownTool));
-        multi_tool.register_tool("code", Box::new(CodeTool));
-        multi_tool.register_tool("image", Box::new(ImageTool));
-
-        multi_tool
+        // Register default viewers
+        viewer_manager.register_viewer("markdown", Box::new(MarkdownViewer));
+        viewer_manager.register_viewer("code", Box::new(CodeViewer));
+        viewer_manager.register_viewer("image", Box::new(ImageViewer));
+        viewer_manager
     }
 
-    pub fn register_tool(&mut self, name: &str, tool: Box<dyn Tool>) {
-        self.tools.insert(name.to_string(), tool);
+    pub fn register_viewer(&mut self, name: &str, viewer: Box<dyn Viewer>) {
+        self.viewers.insert(name.to_string(), viewer);
     }
 
     pub fn visualize(
         &self,
-        tool_names: &[String],
+        viewer_names: &[String],
         content: &str,
         file_path: Option<&str>,
     ) -> io::Result<()> {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
-
-        for (index, tool_name) in tool_names.iter().enumerate() {
+        for (index, viewer_name) in viewer_names.iter().enumerate() {
             if index > 0 {
                 writeln!(stdout)?;
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
@@ -47,39 +41,36 @@ impl MultiTool {
                 stdout.reset()?;
                 writeln!(stdout)?;
             }
-
-            if let Some(tool) = self.tools.get(tool_name) {
+            if let Some(viewer) = self.viewers.get(viewer_name) {
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
-                writeln!(stdout, "Visualization with {}", tool_name)?;
+                writeln!(stdout, "Visualization with {}", viewer_name)?;
                 stdout.reset()?;
                 writeln!(stdout)?;
-
-                tool.visualize(content, file_path)?;
+                viewer.visualize(content, file_path)?;
             } else {
-                eprintln!("Unknown tool: {}", tool_name);
+                eprintln!("Unknown viewer: {}", viewer_name);
             }
         }
-
         Ok(())
     }
 }
 
-pub trait Tool {
+pub trait Viewer {
     fn visualize(&self, content: &str, file_path: Option<&str>) -> io::Result<()>;
 }
 
-struct MarkdownTool;
+struct MarkdownViewer;
 
-impl Tool for MarkdownTool {
+impl Viewer for MarkdownViewer {
     fn visualize(&self, content: &str, _file_path: Option<&str>) -> io::Result<()> {
         let json = app::parse_and_process_markdown(content)?;
         render_markdown(&json)
     }
 }
 
-struct CodeTool;
+struct CodeViewer;
 
-impl Tool for CodeTool {
+impl Viewer for CodeViewer {
     fn visualize(&self, content: &str, file_path: Option<&str>) -> io::Result<()> {
         let language = file_path
             .map(|path| detect_language(path))
@@ -88,9 +79,9 @@ impl Tool for CodeTool {
     }
 }
 
-struct ImageTool;
+struct ImageViewer;
 
-impl Tool for ImageTool {
+impl Viewer for ImageViewer {
     fn visualize(&self, _content: &str, file_path: Option<&str>) -> io::Result<()> {
         if let Some(path) = file_path {
             render_image_file(path)
@@ -103,13 +94,12 @@ impl Tool for ImageTool {
     }
 }
 
-pub fn determine_tool_names(file_path: &Path) -> Vec<String> {
+pub fn determine_viewer(file_path: &Path) -> Vec<String> {
     let extension = file_path
         .extension()
         .and_then(std::ffi::OsStr::to_str)
         .unwrap_or("")
         .to_lowercase();
-
     match extension.as_str() {
         "md" => vec!["markdown".to_string()],
         "jpg" | "jpeg" | "png" | "gif" | "bmp" | "webp" => vec!["image".to_string()],
