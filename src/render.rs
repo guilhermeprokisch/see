@@ -33,6 +33,8 @@ pub fn render_markdown(ast: &Value) -> io::Result<()> {
 }
 
 fn render_node(node: &Value) -> io::Result<()> {
+    let config = get_config();
+
     match node["type"].as_str() {
         Some("root") => render_children(node)?,
         Some("heading") => render_heading(node)?,
@@ -54,8 +56,11 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("imageReference") => render_image_reference(node)?,
         Some("definition") => render_definition(node)?,
         Some("linkReference") => render_link_reference(node)?,
-        Some("html") => render_html(node)?,
-
+        Some("html") => {
+            if config.convert_html {
+                render_html(node)?
+            }
+        }
         _ => {
             if DEBUG_MODE.load(Ordering::Relaxed) {
                 println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
@@ -432,7 +437,10 @@ pub fn render_image_file(path: &str) -> io::Result<()> {
     };
 
     if let Err(e) = viuer::print_from_file(&local_path, &viuer_config) {
-        eprintln!("Error rendering image: {}", e);
+        // Silently ignore errors when rendering images
+        if config.debug_mode {
+            eprintln!("Error rendering image: {}", e);
+        }
     }
 
     Ok(())
