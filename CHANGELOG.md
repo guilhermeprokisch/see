@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/guilhermeprokisch/see/compare/v0.6.0...v0.7.0) (2024-09-13)
+
+
+### Features
+
+* add markdown blocks rendering ([#23](https://github.com/guilhermeprokisch/see/issues/23)) ([4e29b90](https://github.com/guilhermeprokisch/see/commit/4e29b901aa7d3844d7c67cadf958e35139b3b78f))
+
 ## [0.6.0](https://github.com/guilhermeprokisch/see/compare/v0.5.3...v0.6.0) (2024-09-13)
 
 
