@@ -13,7 +13,6 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
       tag_name: ${{ steps.release.outputs.tag_name }}
     steps:
       - uses: googleapis/release-please-action@v4
@@ -25,7 +24,7 @@ jobs:
 
   publish-and-tag:
     needs: release-please
-    if: needs.release-please.outputs.release_created
+    if: needs.release-please.outputs.tag_name
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
