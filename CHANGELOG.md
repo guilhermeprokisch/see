@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/guilhermeprokisch/see/compare/v0.7.0...v0.7.1) (2024-09-13)
+
+
+### Bug Fixes
+
+* remove ansi codes from piped markdown ([ab3cbf8](https://github.com/guilhermeprokisch/see/commit/ab3cbf88887f660216e1206950c628a38b91a743))
+
 ## [0.7.0](https://github.com/guilhermeprokisch/see/compare/v0.6.0...v0.7.0) (2024-09-13)
 
 
