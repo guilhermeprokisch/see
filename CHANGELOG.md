@@ -7,16 +7,17 @@ All notable changes to this project will be documented in this file.
 ### Miscellaneous Tasks
 
 - Add cliff
+- Add CHANGELOG
 
 ## [0.5.3] - 2024-09-12
 
 ### Features
 
-- Add simple dir view (#13)
+- Add simple dir view ([#13](https://github.com/guilhermeprokisch/see/issues/13))
 
 ### Bug Fixes
 
-- Remove ansi codes when redirect to a file (#17)
+- Remove ansi codes when redirect to a file ([#17](https://github.com/guilhermeprokisch/see/issues/17))
 
 ### Documentation
 
@@ -36,7 +37,7 @@ All notable changes to this project will be documented in this file.
 ### Release
 
 - V0.5.1
-- V0.5.2 (#16)
+- V0.5.2 ([#16](https://github.com/guilhermeprokisch/see/issues/16))
 
 ## [0.4.2] - 2024-09-09
 
@@ -75,8 +76,8 @@ All notable changes to this project will be documented in this file.
 
 ### Features
 
-- Add code viewer (#9)
-- Rename to see (#11)
+- Add code viewer ([#9](https://github.com/guilhermeprokisch/see/issues/9))
+- Rename to see ([#11](https://github.com/guilhermeprokisch/see/issues/11))
 
 ### Documentation
 
@@ -156,7 +157,7 @@ All notable changes to this project will be documented in this file.
 
 ### Wip
 
-- Add deps for musl compilation (#7)
+- Add deps for musl compilation ([#7](https://github.com/guilhermeprokisch/see/issues/7))
 
 ## [0.2.7] - 2024-08-29
 
