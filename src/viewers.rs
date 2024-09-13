@@ -1,4 +1,5 @@
 use crate::app;
+use crate::config::get_config;
 use crate::render::{render_code_file, render_image_file, render_markdown};
 use crate::utils::detect_language;
 use std::collections::HashMap;
@@ -33,19 +34,29 @@ impl ViewerManager {
         file_path: Option<&str>,
     ) -> io::Result<()> {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
-        for (index, viewer_name) in viewer_names.iter().enumerate() {
-            if index > 0 {
+        let config = get_config();
+
+        // Display file name if available and show_filename is true
+        if config.show_filename {
+            if let Some(path) = file_path {
+                let file_name = Path::new(path)
+                    .file_name()
+                    .unwrap_or_default()
+                    .to_string_lossy();
+                stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)).set_bold(true))?;
                 writeln!(stdout)?;
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
-                writeln!(stdout, "---")?;
+                writeln!(stdout, "{}", file_name)?;
                 stdout.reset()?;
                 writeln!(stdout)?;
             }
-            if let Some(viewer) = self.viewers.get(viewer_name) {
-                stdout.set_color(ColorSpec::new().set_fg(Some(Color::Green)))?;
-                writeln!(stdout, "Visualization with {}", viewer_name)?;
-                stdout.reset()?;
+        }
+
+        for (index, viewer_name) in viewer_names.iter().enumerate() {
+            if index > 0 {
                 writeln!(stdout)?;
+            }
+            if let Some(viewer) = self.viewers.get(viewer_name) {
                 viewer.visualize(content, file_path)?;
             } else {
                 eprintln!("Unknown viewer: {}", viewer_name);

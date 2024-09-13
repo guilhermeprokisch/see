@@ -22,6 +22,7 @@ If FILE is not provided, see reads from standard input.
 | `--render-links`         | Enable or disable clickable links                   |
 | `--render-table-borders` | Enable or disable table borders in rendered output  |
 | `--show-line-numbers`    | Show or hide line numbers when rendering code files |
+| `--show-filename`        | Show or hide the filename before rendering content  |
 | `--config <file>`        | Specify a custom configuration file                 |
 | `--use-color`            | Control color output                                |
 
@@ -78,5 +79,11 @@ see --render-table-borders=true path/to/your/markdown_file.md
 Disable color output when piping to another command:
 
 ```bash
-see --use-color=false path/to/your/markdown_file.rs | echo
+see --use-color=false path/to/your/markdown_file.rs | less
+```
+
+Render content without showing the filename:
+
+```bash
+see --show-filename=false path/to/your/markdown_file.md
 ```

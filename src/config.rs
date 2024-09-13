@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub render_links: bool,
     pub render_table_borders: bool,
     pub show_line_numbers: bool,
+    pub show_filename: bool,
     pub debug_mode: bool,
     pub use_colors: bool,
 }
@@ -55,6 +56,7 @@ impl AppConfig {
             render_links: true,
             render_table_borders: false,
             show_line_numbers: true,
+            show_filename: false,
             debug_mode: false,
             use_colors: true,
         }
@@ -123,6 +125,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
                 "show-line-numbers" => {
                     config.show_line_numbers = parse_bool(parts.get(1).map(|s| *s))
                 }
+                "show-filename" => config.show_filename = parse_bool(parts.get(1).map(|s| *s)),
                 "use-colors" => config.use_colors = parse_bool(parts.get(1).map(|s| *s)),
                 "config" => {
                     if let Some(path) = parts.get(1) {

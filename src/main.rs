@@ -26,7 +26,6 @@ fn main() -> std::io::Result<()> {
                 if path.is_dir() {
                     directory_tree::handle_directory(path)?;
                 } else {
-                    println!("\nFile: {}", path.display());
                     let viewer = determine_viewer(path);
                     if viewer.contains(&"image".to_string()) {
                         viewer_manager.visualize(&viewer, "", path.to_str())?;
