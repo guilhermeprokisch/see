@@ -37,7 +37,6 @@ impl ViewerManager {
         let mut stdout = StandardStream::stdout(ColorChoice::Always);
         let config = get_config();
 
-        // Display file name if available and show_filename is true
         if config.show_filename {
             if let Some(path) = file_path {
                 let file_name = Path::new(path)
