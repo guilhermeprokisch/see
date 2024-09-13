@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub render_links: bool,
     pub render_table_borders: bool,
     pub show_line_numbers: bool,
+    pub show_filename: bool,
     pub debug_mode: bool,
     pub use_colors: bool,
 }
@@ -55,6 +56,7 @@ impl AppConfig {
             render_links: true,
             render_table_borders: false,
             show_line_numbers: true,
+            show_filename: false,
             debug_mode: false,
             use_colors: true,
         }
@@ -82,8 +84,8 @@ pub fn get_config() -> &'static AppConfig {
     CONFIG.get().expect("Config not initialized")
 }
 
-pub fn initialize_app() -> io::Result<(AppConfig, Option<PathBuf>)> {
-    let (mut config, file_path) = parse_cli_args()?;
+pub fn initialize_app() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
+    let (mut config, file_paths) = parse_cli_args()?;
 
     if !std::io::stdout().is_terminal() {
         config.use_colors = false;
@@ -98,28 +100,13 @@ pub fn initialize_app() -> io::Result<(AppConfig, Option<PathBuf>)> {
         .set(config.clone())
         .map_err(|_| io::Error::new(io::ErrorKind::AlreadyExists, "Config already initialized"))?;
 
-    Ok((config, file_path))
+    Ok((config, file_paths))
 }
 
-fn parse_bool(value: Option<&str>) -> bool {
-    match value {
-        Some(v) => match v.to_lowercase().as_str() {
-            "true" | "1" => true,
-            "false" | "0" => false,
-            _ => true, // Default to true if the value is not recognized
-        },
-        None => true, // Default to true if no value is provided
-    }
-}
-
-fn parse_u32(value: Option<&str>) -> Option<u32> {
-    value.and_then(|v| v.parse().ok())
-}
-
-fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
+fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
     let args: Vec<String> = env::args().collect();
     let mut config = AppConfig::default();
-    let mut file_path = None;
+    let mut file_paths = Vec::new();
     let mut i = 1;
 
     while i < args.len() {
@@ -132,12 +119,13 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
                 "max-image-height" => config.max_image_height = parse_u32(parts.get(1).map(|s| *s)),
                 "render-images" => config.render_images = parse_bool(parts.get(1).map(|s| *s)),
                 "render-links" => config.render_links = parse_bool(parts.get(1).map(|s| *s)),
-                "render-table_borders" => {
+                "render-table-borders" => {
                     config.render_table_borders = parse_bool(parts.get(1).map(|s| *s))
                 }
                 "show-line-numbers" => {
                     config.show_line_numbers = parse_bool(parts.get(1).map(|s| *s))
                 }
+                "show-filename" => config.show_filename = parse_bool(parts.get(1).map(|s| *s)),
                 "use-colors" => config.use_colors = parse_bool(parts.get(1).map(|s| *s)),
                 "config" => {
                     if let Some(path) = parts.get(1) {
@@ -171,12 +159,33 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<PathBuf>)> {
                 }
             }
         } else {
-            file_path = Some(PathBuf::from(arg));
+            file_paths.push(PathBuf::from(arg));
         }
         i += 1;
     }
 
-    Ok((config, file_path))
+    let file_paths = if file_paths.is_empty() {
+        None
+    } else {
+        Some(file_paths)
+    };
+
+    Ok((config, file_paths))
+}
+
+fn parse_bool(value: Option<&str>) -> bool {
+    match value {
+        Some(v) => match v.to_lowercase().as_str() {
+            "true" | "1" => true,
+            "false" | "0" => false,
+            _ => true, // Default to true if the value is not recognized
+        },
+        None => true, // Default to true if no value is provided
+    }
+}
+
+fn parse_u32(value: Option<&str>) -> Option<u32> {
+    value.and_then(|v| v.parse().ok())
 }
 
 fn render_help() -> io::Result<()> {

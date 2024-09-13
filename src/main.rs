@@ -1,6 +1,5 @@
 use crate::config::initialize_app;
-use crate::render::{render_code_file, render_image_file, render_markdown};
-use crate::utils::detect_language;
+use crate::viewers::{determine_viewer, ViewerManager};
 use std::path::Path;
 
 mod app;
@@ -9,48 +8,48 @@ mod constants;
 mod directory_tree;
 mod render;
 mod utils;
+mod viewers;
 
 fn main() -> std::io::Result<()> {
-    let (config, file_path) = initialize_app()?;
-
+    let (config, file_paths) = initialize_app()?;
     if config.debug_mode {
         eprintln!("Debug mode enabled");
         eprintln!("Configuration: {:?}", config);
     }
 
-    if let Some(path) = file_path {
-        let path = Path::new(&path);
+    let viewer_manager = ViewerManager::new();
 
-        if path.is_dir() {
-            // Handle directory
-            directory_tree::handle_directory(path)?;
-        } else {
-            let extension = path
-                .extension()
-                .and_then(std::ffi::OsStr::to_str)
-                .unwrap_or("");
-
-            match extension.to_lowercase().as_str() {
-                "md" => {
-                    let content = app::read_content(Some(path.to_str().unwrap().to_string()))?;
-                    let json = app::parse_and_process_markdown(&content)?;
-                    render_markdown(&json)?;
-                }
-                "jpg" | "jpeg" | "png" | "gif" | "bmp" => {
-                    render_image_file(path.to_str().unwrap())?;
-                }
-                _ => {
-                    let content = app::read_content(Some(path.to_str().unwrap().to_string()))?;
-                    let language = detect_language(path.to_str().unwrap());
-                    render_code_file(&content, &language)?;
+    match file_paths {
+        Some(paths) => {
+            for path in paths {
+                let path = Path::new(&path);
+                if path.is_dir() {
+                    directory_tree::handle_directory(path)?;
+                } else {
+                    let viewer = determine_viewer(path);
+                    if viewer.contains(&"image".to_string()) {
+                        viewer_manager.visualize(&viewer, "", path.to_str())?;
+                    } else {
+                        match app::read_content(Some(path.to_str().unwrap().to_string())) {
+                            Ok(content) => {
+                                viewer_manager.visualize(&viewer, &content, path.to_str())?;
+                            }
+                            Err(e) => {
+                                eprintln!("Error reading file {}: {}", path.display(), e);
+                            }
+                        }
+                    }
                 }
             }
         }
-    } else {
-        // Handle stdin input (assuming it's always Markdown)
-        let content = app::read_content(None)?;
-        let json = app::parse_and_process_markdown(&content)?;
-        render_markdown(&json)?;
+        None => {
+            let content = app::read_content(None)?;
+            viewer_manager.visualize(
+                &["markdown".to_string(), "code".to_string()],
+                &content,
+                None,
+            )?;
+        }
     }
 
     Ok(())
