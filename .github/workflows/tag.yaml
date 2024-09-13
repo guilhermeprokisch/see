@@ -30,7 +30,9 @@ jobs:
         if: steps.extract_version.outputs.version != ''
         run: |
           VERSION=${{ steps.extract_version.outputs.version }}
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name Guilherme Prokisch
+          git config user.email guilherme.prokisch@gmail.com
           git tag -a v$VERSION -m "Release v$VERSION"
           git push origin v$VERSION
+        env:
+          GITHUB_TOKEN: ${{ secrets.RELEASE_BOT }}
