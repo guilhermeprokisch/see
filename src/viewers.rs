@@ -2,6 +2,7 @@ use crate::app;
 use crate::config::get_config;
 use crate::render::{render_code_file, render_image_file, render_markdown};
 use crate::utils::detect_language;
+use devicons::{icon_for_file, File, Theme};
 use std::collections::HashMap;
 use std::io::{self, Write};
 use std::path::Path;
@@ -43,10 +44,13 @@ impl ViewerManager {
                     .file_name()
                     .unwrap_or_default()
                     .to_string_lossy();
+
+                let file = File::new(Path::new(path));
+                let icon = icon_for_file(&file, Some(Theme::Dark));
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Blue)).set_bold(true))?;
                 writeln!(stdout)?;
                 stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
-                writeln!(stdout, "{}", file_name)?;
+                writeln!(stdout, "{}  {}", icon.icon, file_name)?;
                 stdout.reset()?;
                 writeln!(stdout)?;
             }
