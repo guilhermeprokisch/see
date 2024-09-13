@@ -1,3 +1,4 @@
+use htmd::HtmlToMarkdown;
 use lazy_static::lazy_static;
 use serde_json::json;
 use serde_json::Value;
@@ -53,6 +54,8 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("imageReference") => render_image_reference(node)?,
         Some("definition") => render_definition(node)?,
         Some("linkReference") => render_link_reference(node)?,
+        Some("html") => render_html(node)?,
+
         _ => {
             if DEBUG_MODE.load(Ordering::Relaxed) {
                 println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
@@ -734,4 +737,29 @@ fn get_stdout() -> Box<dyn WriteColor> {
     } else {
         Box::new(StandardStream::stdout(ColorChoice::Never))
     }
+}
+
+fn render_html(node: &Value) -> io::Result<()> {
+    if let Some(html_content) = node["value"].as_str() {
+        let converter = HtmlToMarkdown::new();
+        match converter.convert(html_content) {
+            Ok(markdown) => {
+                // Parse the resulting markdown
+                let md_ast = markdown::to_mdast(&markdown, &markdown::ParseOptions::gfm())
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+                let md_json: Value = serde_json::from_str(&serde_json::to_string(&md_ast).unwrap())
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+                // Render the markdown AST
+                render_node(&md_json)?;
+            }
+            Err(e) => {
+                eprintln!("Error converting HTML to Markdown: {}", e);
+                // Fallback to rendering raw HTML
+                println!("{}", html_content);
+            }
+        }
+    }
+    Ok(())
 }
