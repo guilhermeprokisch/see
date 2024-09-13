@@ -44,11 +44,9 @@ fn main() -> std::io::Result<()> {
         }
         None => {
             let content = app::read_content(None)?;
-            viewer_manager.visualize(
-                &["markdown".to_string(), "code".to_string()],
-                &content,
-                None,
-            )?;
+            // It uses the markdown viewer by default.
+            // Could be changed to use the first viewer from the config file in the future?
+            viewer_manager.visualize(&["markdown".to_string()], &content, None)?;
         }
     }
 

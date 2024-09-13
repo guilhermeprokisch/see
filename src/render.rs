@@ -1,3 +1,4 @@
+use htmd::HtmlToMarkdown;
 use lazy_static::lazy_static;
 use serde_json::json;
 use serde_json::Value;
@@ -32,6 +33,8 @@ pub fn render_markdown(ast: &Value) -> io::Result<()> {
 }
 
 fn render_node(node: &Value) -> io::Result<()> {
+    let config = get_config();
+
     match node["type"].as_str() {
         Some("root") => render_children(node)?,
         Some("heading") => render_heading(node)?,
@@ -53,6 +56,11 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("imageReference") => render_image_reference(node)?,
         Some("definition") => render_definition(node)?,
         Some("linkReference") => render_link_reference(node)?,
+        Some("html") => {
+            if config.convert_html {
+                render_html(node)?
+            }
+        }
         _ => {
             if DEBUG_MODE.load(Ordering::Relaxed) {
                 println!("{}Unsupported node type: {:?}", get_indent(), node["type"]);
@@ -429,7 +437,10 @@ pub fn render_image_file(path: &str) -> io::Result<()> {
     };
 
     if let Err(e) = viuer::print_from_file(&local_path, &viuer_config) {
-        eprintln!("Error rendering image: {}", e);
+        // Silently ignore errors when rendering images
+        if config.debug_mode {
+            eprintln!("Error rendering image: {}", e);
+        }
     }
 
     Ok(())
@@ -734,4 +745,29 @@ fn get_stdout() -> Box<dyn WriteColor> {
     } else {
         Box::new(StandardStream::stdout(ColorChoice::Never))
     }
+}
+
+fn render_html(node: &Value) -> io::Result<()> {
+    if let Some(html_content) = node["value"].as_str() {
+        let converter = HtmlToMarkdown::new();
+        match converter.convert(html_content) {
+            Ok(markdown) => {
+                // Parse the resulting markdown
+                let md_ast = markdown::to_mdast(&markdown, &markdown::ParseOptions::gfm())
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+                let md_json: Value = serde_json::from_str(&serde_json::to_string(&md_ast).unwrap())
+                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
+
+                // Render the markdown AST
+                render_node(&md_json)?;
+            }
+            Err(e) => {
+                eprintln!("Error converting HTML to Markdown: {}", e);
+                // Fallback to rendering raw HTML
+                println!("{}", html_content);
+            }
+        }
+    }
+    Ok(())
 }

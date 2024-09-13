@@ -25,6 +25,7 @@ If FILE is not provided, see reads from standard input.
 | `--show-filename`        | Show or hide the filename before rendering content  |
 | `--config <file>`        | Specify a custom configuration file                 |
 | `--use-color`            | Control color output                                |
+| `--convert-html`         | Enable or disable HTML to Markdown conversion       |
 
 ## Examples
 
@@ -86,4 +87,10 @@ Render content without showing the filename:
 
 ```bash
 see --show-filename=false path/to/your/markdown_file.md
+```
+
+Convert HTML to Markdown:
+
+```bash
+see --convert-html=true path/to/your/file_with_html.md
 ```

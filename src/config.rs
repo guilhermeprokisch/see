@@ -23,6 +23,7 @@ pub struct AppConfig {
     pub show_filename: bool,
     pub debug_mode: bool,
     pub use_colors: bool,
+    pub convert_html: bool,
 }
 
 impl AppConfig {
@@ -50,7 +51,7 @@ impl AppConfig {
 
     fn default_config() -> Self {
         AppConfig {
-            max_image_width: Some(40),
+            max_image_width: Some(100),
             max_image_height: Some(13),
             render_images: true,
             render_links: true,
@@ -59,6 +60,7 @@ impl AppConfig {
             show_filename: false,
             debug_mode: false,
             use_colors: true,
+            convert_html: true,
         }
     }
 
@@ -125,6 +127,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
                 "show-line-numbers" => {
                     config.show_line_numbers = parse_bool(parts.get(1).map(|s| *s))
                 }
+                "convert-html" => config.convert_html = parse_bool(parts.get(1).map(|s| *s)),
                 "show-filename" => config.show_filename = parse_bool(parts.get(1).map(|s| *s)),
                 "use-colors" => config.use_colors = parse_bool(parts.get(1).map(|s| *s)),
                 "config" => {

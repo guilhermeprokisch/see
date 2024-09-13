@@ -5,15 +5,15 @@
 <img width="1363" alt="image" src="https://github.com/user-attachments/assets/bd253204-deca-4756-bbba-60272e0a367c">
 
 Markdown it's special 🐈
+
 <img width="1363" alt="image" src="https://github.com/user-attachments/assets/b4c3c3ef-8ba5-4ab5-8a3d-55556ca02536">
 
 And Images 🖼️ 📷
 
 https://github.com/user-attachments/assets/106c18e6-61ef-4fbd-89f1-883ae028467d
 
-
 > [!WARNING]  
-> **DISCLAIMER: This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.**
+> This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.\*\*
 
 see is a powerful file visualization tool for the terminal, offering advanced code viewing capabilities, Markdown rendering, and more. It provides syntax highlighting, emoji support, and image rendering capabilities, offering a visually appealing way to view various file types directly in your console.
 
@@ -31,7 +31,7 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 
 # Motivation and Context
 
-The primary goal of **see** *(smd before v0.4.0)*  was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
+The primary goal of **see** _(smd before v0.4.0)_ was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
 
 As the project evolved from its initial focus on Markdown, support for viewing code files was added, expanding its utility in diverse development ecosystems. Now, see is your go-to tool for seeing everything that a cat can see!
 
@@ -85,7 +85,8 @@ There are several ways to install see:
 The easiest and fastest way to install see is by using our shell script:
 
 > [!IMPORTANT]  
-> **DISCLAIMER: The version number in the URL bellow (v0.5.2) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.**
+> The version number in the URL bellow (v0.5.2) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.\*\*
+
 ```sh
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.5.2/see-cat-installer.sh | sh
 ```
