@@ -1,0 +1,32 @@
+name: Create Tag on Release Commit
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  create-tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract version from commit message
+        id: extract_version
+        run: |
+          COMMIT_MSG=$(git log --format=%B -n 1 ${{ github.sha }})
+          if [[ $COMMIT_MSG =~ chore\(main\):\ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+          else
+            echo "version=" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create and push tag
+        if: steps.extract_version.outputs.version != ''
+        run: |
+          VERSION=${{ steps.extract_version.outputs.version }}
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git tag -a v$VERSION -m "Release v$VERSION"
+          git push origin v$VERSION
