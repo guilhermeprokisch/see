@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/guilhermeprokisch/see/compare/v0.7.0...v0.7.1) (2024-09-13)
+
+
+### Bug Fixes
+
+* ansi pipe markdown ([#40](https://github.com/guilhermeprokisch/see/issues/40)) ([b52d0a8](https://github.com/guilhermeprokisch/see/commit/b52d0a8705e528bbfa1eb76708bae0266eaac34f))
+
 ## [0.7.0](https://github.com/guilhermeprokisch/see/compare/v0.6.0...v0.7.0) (2024-09-13)
 
 
