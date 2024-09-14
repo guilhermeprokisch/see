@@ -56,6 +56,10 @@ jobs:
     if: needs.create-tag.outputs.version != ''
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          token: ${{ secrets.RELEASE_BOT }}
       - name: Remove labels from release PR
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT }}
