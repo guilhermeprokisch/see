@@ -44,6 +44,7 @@ ansi_colours = "1.2.3"
 hyperpolyglot = "0.1.7"
 devicons = "0.1.0"
 htmd = "0.1.6"
+base64 = "0.22.1"
 
 
 # The profile that 'cargo dist' will build with
