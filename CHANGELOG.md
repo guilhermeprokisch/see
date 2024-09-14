@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.0](https://github.com/guilhermeprokisch/see/compare/v0.7.1...v0.8.0) (2024-09-14)
+
+
+### Features
+
+* concatenate output and support base64 image encoding  ([#57](https://github.com/guilhermeprokisch/see/issues/57)) ([19c77e7](https://github.com/guilhermeprokisch/see/commit/19c77e74ac2ad1ace42ae2b33f2fa86db6fd0cba))
+
 ## [0.7.1](https://github.com/guilhermeprokisch/see/compare/v0.7.0...v0.7.1) (2024-09-13)
 
 
