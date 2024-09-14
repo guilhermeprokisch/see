@@ -6,11 +6,9 @@ use std::collections::HashMap;
 use std::io::{self, Write};
 use std::path::PathBuf;
 
-use base64::{engine::general_purpose, Engine as _};
 use std::sync::atomic::Ordering;
 use std::sync::Mutex;
 use termcolor::{Color, ColorChoice, ColorSpec, StandardStream, WriteColor};
-
 use url::Url;
 
 use crate::config::get_config;
@@ -408,31 +406,7 @@ pub fn render_image(node: &Value) -> io::Result<()> {
     }
 
     let url = node["url"].as_str().unwrap_or("");
-
-    if url.starts_with("data:image") {
-        // Handle base64 encoded image
-        let parts: Vec<&str> = url.split(',').collect();
-        if parts.len() == 2 {
-            let b64_data = parts[1];
-            let decoded = general_purpose::STANDARD
-                .decode(b64_data)
-                .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-            // Create a temporary file
-            let mut temp_file = tempfile::NamedTempFile::new()?;
-            temp_file.write_all(&decoded)?;
-            let temp_path = temp_file.into_temp_path();
-
-            render_image_file(temp_path.to_str().unwrap())
-        } else {
-            Err(io::Error::new(
-                io::ErrorKind::InvalidData,
-                "Invalid base64 image data",
-            ))
-        }
-    } else {
-        render_image_file(url)
-    }
+    render_image_file(url)
 }
 
 pub fn render_image_file(path: &str) -> io::Result<()> {

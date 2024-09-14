@@ -2,7 +2,6 @@ use crate::app;
 use crate::config::get_config;
 use crate::render::{render_code_file, render_image_file, render_markdown};
 use crate::utils::detect_language;
-use base64::{engine::general_purpose, Engine as _};
 use devicons::{icon_for_file, File, Theme};
 use std::collections::HashMap;
 use std::io::{self, Write};
@@ -97,34 +96,13 @@ impl Viewer for CodeViewer {
 struct ImageViewer;
 
 impl Viewer for ImageViewer {
-    fn visualize(&self, content: &str, file_path: Option<&str>) -> io::Result<()> {
+    fn visualize(&self, _content: &str, file_path: Option<&str>) -> io::Result<()> {
         if let Some(path) = file_path {
             render_image_file(path)
-        } else if content.starts_with("data:image") {
-            // Handle base64 encoded image
-            let parts: Vec<&str> = content.split(',').collect();
-            if parts.len() == 2 {
-                let b64_data = parts[1];
-                let decoded = general_purpose::STANDARD
-                    .decode(b64_data)
-                    .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-
-                // Create a temporary file
-                let mut temp_file = tempfile::NamedTempFile::new()?;
-                temp_file.write_all(&decoded)?;
-                let temp_path = temp_file.into_temp_path();
-
-                render_image_file(temp_path.to_str().unwrap())
-            } else {
-                Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "Invalid base64 image data",
-                ))
-            }
         } else {
             Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "No file path or valid base64 image data provided for image rendering",
+                "No file path provided for image rendering",
             ))
         }
     }
