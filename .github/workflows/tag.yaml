@@ -38,3 +38,21 @@ jobs:
           git push origin v$VERSION
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT }}
+
+  publish:
+    name: Publish to crates.io
+    runs-on: ubuntu-latest
+    needs: release-please
+    if: needs.release-please.outputs.created
+
+    environment: crates.io
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: swatinem/rust-cache@v2
+      - name: Publish
+        run: >
+          cargo publish
+          --verbose
+          --locked
+          --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
