@@ -2025,6 +2025,7 @@ name = "see-cat"
 version = "0.7.1"
 dependencies = [
  "ansi_colours",
+ "base64 0.22.1",
  "crossterm 0.28.1",
  "devicons",
  "dirs",
