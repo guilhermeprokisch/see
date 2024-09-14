@@ -1,23 +1,21 @@
 name: Create Tag on Release Commit
-
 on:
   push:
     branches:
       - main
-
 permissions:
   contents: write
   pull-requests: write
-
 jobs:
   create-tag:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.extract_version.outputs.version }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
         with:
           token: ${{ secrets.RELEASE_BOT }}
-
       - name: Extract version from commit message
         id: extract_version
         run: |
@@ -27,7 +25,6 @@ jobs:
           else
             echo "version=" >> $GITHUB_OUTPUT
           fi
-
       - name: Create and push tag
         if: steps.extract_version.outputs.version != ''
         run: |
@@ -38,15 +35,12 @@ jobs:
           git push origin v$VERSION
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT }}
-
   publish:
     name: Publish to crates.io
+    needs: create-tag
+    if: needs.create-tag.outputs.version != ''
     runs-on: ubuntu-latest
-    if: steps.extract_version.outputs.version != ''
-    needs: release-please
-
     environment: crates.io
-
     steps:
       - uses: actions/checkout@v3
       - uses: swatinem/rust-cache@v2
