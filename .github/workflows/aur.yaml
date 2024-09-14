@@ -1,0 +1,71 @@
+name: Manual AUR Publish
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to publish (e.g., v1.0.0)"
+        required: true
+
+jobs:
+  publish-aur:
+    runs-on: ubuntu-latest
+    environment: AUR
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # This ensures all tags are fetched
+      - name: Validate tag
+        run: |
+          if ! git rev-parse ${{ github.event.inputs.tag }} >/dev/null 2>&1; then
+            echo "Error: Tag ${{ github.event.inputs.tag }} does not exist"
+            exit 1
+          fi
+      - name: Set version from tag
+        run: echo "VERSION=${TAG#v}" >> $GITHUB_ENV
+        env:
+          TAG: ${{ github.event.inputs.tag }}
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+      - name: Install cargo-aur
+        run: cargo install cargo-aur
+      - name: Generate PKGBUILD
+        run: |
+          cargo aur
+          ls -la target/cargo-aur
+      - name: Setup SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          echo "Host aur.archlinux.org" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/aur" >> ~/.ssh/config
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+      - name: Clone AUR package
+        run: git clone ssh://aur@aur.archlinux.org/see.git aur-repo
+      - name: Update AUR package
+        run: |
+          cp target/cargo-aur/PKGBUILD aur-repo/
+          cd aur-repo
+          # Generate .SRCINFO manually
+          echo "pkgbase = see" > .SRCINFO
+          echo "pkgname = see" >> .SRCINFO
+          echo "pkgver = ${{ env.VERSION }}" >> .SRCINFO
+          echo "pkgrel = 1" >> .SRCINFO
+          echo "pkgdesc = $(grep '^pkgdesc=' PKGBUILD | cut -d'=' -f2- | tr -d '"')" >> .SRCINFO
+          echo "url = $(grep '^url=' PKGBUILD | cut -d'=' -f2- | tr -d '"')" >> .SRCINFO
+          echo "arch = x86_64" >> .SRCINFO
+          echo "license = $(grep '^license=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "depends = $(grep '^depends=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "makedepends = $(grep '^makedepends=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "source = $(grep '^source=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to version ${{ env.VERSION }}"
+          git push

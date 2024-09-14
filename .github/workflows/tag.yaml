@@ -1,78 +1,145 @@
-name: Create Tag on Release Commit
+name: Create Tag on Release Commit and Publish
+
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (e.g., 1.2.3)"
+        required: true
+
 permissions:
   contents: write
   pull-requests: write
+
 jobs:
-  create-tag:
+  # create-tag:
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     version: ${{ steps.extract_version.outputs.version }}
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         token: ${{ secrets.RELEASE_BOT }}
+  #     - name: Extract version from commit message or input
+  #       id: extract_version
+  #       run: |
+  #         if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+  #           echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+  #         else
+  #           COMMIT_MSG=$(git log --format=%B -n 1 ${{ github.sha }})
+  #           if [[ $COMMIT_MSG =~ chore\(main\):\ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
+  #             echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
+  #           else
+  #             echo "version=" >> $GITHUB_OUTPUT
+  #           fi
+  #         fi
+  #     - name: Create and push tag
+  #       if: steps.extract_version.outputs.version != ''
+  #       run: |
+  #         VERSION=${{ steps.extract_version.outputs.version }}
+  #         git config user.name Guilherme Prokisch
+  #         git config user.email guilherme.prokisch@gmail.com
+  #         git tag -a v$VERSION -m "Release v$VERSION"
+  #         git push origin v$VERSION
+  #       env:
+  #         GH_TOKEN: ${{ secrets.RELEASE_BOT }}
+  #
+  # publish:
+  #   name: Publish to crates.io
+  #   needs: create-tag
+  #   if: needs.create-tag.outputs.version != ''
+  #   runs-on: ubuntu-latest
+  #   environment: crates.io
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #     - uses: swatinem/rust-cache@v2
+  #     - name: Publish
+  #       run: >
+  #         cargo publish
+  #         --verbose
+  #         --locked
+  #         --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
+  publish-aur:
+    name: Publish to AUR
+    # needs: [create-tag, publish]
+    # if: needs.create-tag.outputs.version != ''
     runs-on: ubuntu-latest
-    outputs:
-      version: ${{ steps.extract_version.outputs.version }}
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.RELEASE_BOT }}
-      - name: Extract version from commit message
-        id: extract_version
-        run: |
-          COMMIT_MSG=$(git log --format=%B -n 1 ${{ github.sha }})
-          if [[ $COMMIT_MSG =~ chore\(main\):\ release\ ([0-9]+\.[0-9]+\.[0-9]+) ]]; then
-            echo "version=${BASH_REMATCH[1]}" >> $GITHUB_OUTPUT
-          else
-            echo "version=" >> $GITHUB_OUTPUT
-          fi
-      - name: Create and push tag
-        if: steps.extract_version.outputs.version != ''
-        run: |
-          VERSION=${{ steps.extract_version.outputs.version }}
-          git config user.name Guilherme Prokisch
-          git config user.email guilherme.prokisch@gmail.com
-          git tag -a v$VERSION -m "Release v$VERSION"
-          git push origin v$VERSION
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT }}
-  publish:
-    name: Publish to crates.io
-    needs: create-tag
-    if: needs.create-tag.outputs.version != ''
-    runs-on: ubuntu-latest
-    environment: crates.io
+    environment: AUR
     steps:
       - uses: actions/checkout@v3
-      - uses: swatinem/rust-cache@v2
-      - name: Publish
-        run: >
-          cargo publish
-          --verbose
-          --locked
-          --token ${{ secrets.CARGO_REGISTRY_TOKEN }}
-  cleanup-pr-labels:
-    name: Remove labels from release PR
-    needs: [create-tag, publish]
-    if: needs.create-tag.outputs.version != ''
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
         with:
-          token: ${{ secrets.RELEASE_BOT }}
-      - name: Remove labels from release PR
-        env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT }}
-          VERSION: ${{ needs.create-tag.outputs.version }}
+          profile: minimal
+          toolchain: stable
+      - name: Install cargo-aur
+        run: cargo install cargo-aur
+      - name: Generate PKGBUILD
         run: |
-          PR_NUMBER=$(gh pr list --state closed --limit 1 --search "chore(main): release $VERSION in:title" --json number --jq '.[0].number')
-          if [ ! -z "$PR_NUMBER" ]; then
-            echo "Found PR #$PR_NUMBER for release $VERSION"
-            LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name')
-            for label in $LABELS; do
-              echo "Removing label: $label"
-              gh pr edit $PR_NUMBER --remove-label "$label"
-            done
-          else
-            echo "No matching PR found for release $VERSION"
-          fi
+          cargo aur
+          ls -la target/cargo-aur
+      - name: Setup SSH key
+        env:
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$AUR_SSH_PRIVATE_KEY" > ~/.ssh/aur
+          chmod 600 ~/.ssh/aur
+          echo "Host aur.archlinux.org" >> ~/.ssh/config
+          echo "  IdentityFile ~/.ssh/aur" >> ~/.ssh/config
+          ssh-keyscan aur.archlinux.org >> ~/.ssh/known_hosts
+      - name: Clone AUR package
+        run: git clone ssh://aur@aur.archlinux.org/see.git aur-repo
+      - name: Update AUR package
+        run: |
+          cp target/cargo-aur/PKGBUILD aur-repo/
+          cd aur-repo
+          # Generate .SRCINFO manually
+          echo "pkgbase = see" > .SRCINFO
+          echo "pkgname = see" >> .SRCINFO
+          echo "pkgver = ${{ needs.create-tag.outputs.version }}" >> .SRCINFO
+          echo "pkgrel = 1" >> .SRCINFO
+          echo "pkgdesc = $(grep '^pkgdesc=' PKGBUILD | cut -d'=' -f2- | tr -d '"')" >> .SRCINFO
+          echo "url = $(grep '^url=' PKGBUILD | cut -d'=' -f2- | tr -d '"')" >> .SRCINFO
+          echo "arch = x86_64" >> .SRCINFO
+          echo "license = $(grep '^license=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "depends = $(grep '^depends=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "makedepends = $(grep '^makedepends=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          echo "source = $(grep '^source=' PKGBUILD | cut -d'=' -f2- | tr -d '()')" >> .SRCINFO
+          git config user.name "GitHub Action"
+          git config user.email "action@github.com"
+          git add PKGBUILD .SRCINFO
+          git commit -m "Update to version ${{ needs.create-tag.outputs.version }}"
+          git push
+
+  # cleanup-pr-labels:
+  #   name: Remove labels from release PR
+  #   needs: [create-tag, publish, publish-aur]
+  #   if: needs.create-tag.outputs.version != ''
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v3
+  #       with:
+  #         token: ${{ secrets.RELEASE_BOT }}
+  #     - name: Remove labels from release PR
+  #       env:
+  #         GH_TOKEN: ${{ secrets.RELEASE_BOT }}
+  #         VERSION: ${{ needs.create-tag.outputs.version }}
+  #       run: |
+  #         PR_NUMBER=$(gh pr list --state closed --limit 1 --search "chore(main): release $VERSION in:title" --json number --jq '.[0].number')
+  #         if [ ! -z "$PR_NUMBER" ]; then
+  #           echo "Found PR #$PR_NUMBER for release $VERSION"
+  #           LABELS=$(gh pr view $PR_NUMBER --json labels --jq '.labels[].name')
+  #           for label in $LABELS; do
+  #             echo "Removing label: $label"
+  #             gh pr edit $PR_NUMBER --remove-label "$label"
+  #           done
+  #         else
+  #           echo "No matching PR found for release $VERSION"
+  #         fi

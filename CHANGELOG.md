@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/guilhermeprokisch/see/compare/v0.8.0...v0.8.1) (2024-09-14)
+
+
+### Bug Fixes
+
+* admonition render ([#59](https://github.com/guilhermeprokisch/see/issues/59)) ([4e76547](https://github.com/guilhermeprokisch/see/commit/4e7654771c5c18a9fac899903a274ae807aefe1c))
+
 ## [0.8.0](https://github.com/guilhermeprokisch/see/compare/v0.7.1...v0.8.0) (2024-09-14)
 
 
