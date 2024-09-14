@@ -42,8 +42,8 @@ jobs:
   publish:
     name: Publish to crates.io
     runs-on: ubuntu-latest
+    if: steps.extract_version.outputs.version != ''
     needs: release-please
-    if: needs.release-please.outputs.created
 
     environment: crates.io
 
