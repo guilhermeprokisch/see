@@ -689,14 +689,22 @@ fn render_admonition(admonition_type: AdmonitionType, content: &str) -> io::Resu
             .set_fg(Some(admonition_type.color()))
             .set_bold(true),
     )?;
+    println!();
     print!(
         "{} {}: ",
         admonition_type.icon(),
-        format!("{:?}", admonition_type)
+        format!("{:?}", admonition_type),
     );
     stdout.reset()?;
-
+    stdout.set_color(
+        ColorSpec::new()
+            .set_fg(Some(admonition_type.color()))
+            .set_italic(true),
+    )?;
     println!("{}", content);
+    println!();
+    stdout.reset()?;
+
     Ok(())
 }
 
