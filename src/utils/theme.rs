@@ -179,7 +179,7 @@ pub fn create_theme() -> Theme {
     theme.add_style(
         "comment",
         Style {
-            primary_color: "#6A9955".to_string(),
+            primary_color: "#535A7C".to_string(), // Changed to a medium gray
             secondary_color: "".to_string(),
             modifiers: Default::default(),
         },
@@ -187,7 +187,7 @@ pub fn create_theme() -> Theme {
     theme.add_style(
         "comment.line",
         Style {
-            primary_color: "#6A9955".to_string(),
+            primary_color: "#535A7C".to_string(), // Changed to a medium gray
             secondary_color: "".to_string(),
             modifiers: Default::default(),
         },
@@ -195,7 +195,7 @@ pub fn create_theme() -> Theme {
     theme.add_style(
         "comment.block",
         Style {
-            primary_color: "#6A9955".to_string(),
+            primary_color: "#535A7C".to_string(), // Changed to a medium gray
             secondary_color: "".to_string(),
             modifiers: Default::default(),
         },
@@ -203,7 +203,7 @@ pub fn create_theme() -> Theme {
     theme.add_style(
         "comment.block.documentation",
         Style {
-            primary_color: "#6A9955".to_string(),
+            primary_color: "#535A7C".to_string(), // Changed to a medium gray
             secondary_color: "".to_string(),
             modifiers: Default::default(),
         },
