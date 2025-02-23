@@ -13,7 +13,13 @@ pub fn detect_language(path: &str) -> String {
 
     // Use hyperpolyglot for language detection
     match detect(path) {
-        Ok(Some(detection)) => detection.language().to_lowercase(),
+        Ok(Some(detection)) => {
+            let lang = detection.language().to_lowercase();
+            match lang.as_str() {
+                "shell" => "bash".to_string(),
+                _ => lang
+            }
+        },
         Ok(None) | Err(_) => {
             // Fallback to extension-based detection if hyperpolyglot fails
             path.extension()
@@ -30,5 +36,16 @@ pub fn detect_language(path: &str) -> String {
                 .unwrap_or("txt")
                 .to_string()
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_shell_script() {
+        let path = "./utils/script.sh";
+        assert_eq!(detect_language(path), "bash")
     }
 }
