@@ -372,7 +372,7 @@ fn render_link(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     let url = node["url"].as_str().unwrap_or("");
 
-    if config.render_links {
+    if !config.render_links {
         render_children(node)?;
     } else {
         // Add a space before the link reference

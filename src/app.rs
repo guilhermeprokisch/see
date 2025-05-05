@@ -4,7 +4,7 @@ use std::sync::atomic::Ordering;
 use std::sync::OnceLock;
 use tempfile::TempDir;
 
-use crate::config::AppConfig;
+use crate::config::{get_config, AppConfig};
 use crate::constants::{DEBUG_MODE, IMAGE_FOLDER, NO_IMAGES};
 use crate::utils::ast;
 
@@ -41,7 +41,13 @@ pub fn read_content(file_path: Option<String>) -> io::Result<String> {
 }
 
 pub fn parse_and_process_markdown(content: &str) -> io::Result<Value> {
-    let ast = markdown::to_mdast(content, &markdown::ParseOptions::gfm())
+    let config = get_config();
+    let mut md_options = markdown::ParseOptions::gfm();
+    if !config.render_links {
+        md_options.constructs.autolink = false;
+        md_options.constructs.gfm_autolink_literal = false;
+    }
+    let ast = markdown::to_mdast(content, &md_options)
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e.to_string()))?;
 
     let mut json: Value = serde_json::from_str(&serde_json::to_string(&ast).unwrap())
