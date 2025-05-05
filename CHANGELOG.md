@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.8.1](https://github.com/guilhermeprokisch/see/compare/v0.8.0...v0.8.1) (2025-05-05)
+
+
+### Bug Fixes
+
+* admonition render ([#59](https://github.com/guilhermeprokisch/see/issues/59)) ([4e76547](https://github.com/guilhermeprokisch/see/commit/4e7654771c5c18a9fac899903a274ae807aefe1c))
+* Correctly highlight *.sh files with valid highlighter ([#73](https://github.com/guilhermeprokisch/see/issues/73)) ([6c344c5](https://github.com/guilhermeprokisch/see/commit/6c344c55e0b7efaa510f4a3f8cecb30997188970))
+* main.md ([8625f54](https://github.com/guilhermeprokisch/see/commit/8625f542191c9472b18853f3c8a2a77b97fb0146))
+* URL is sticked to surrounding text ([#76](https://github.com/guilhermeprokisch/see/issues/76)) ([f0eb30d](https://github.com/guilhermeprokisch/see/commit/f0eb30d0a078c7ae1fefcffd318ac3366b0934eb))
+
 ## [0.8.1](https://github.com/guilhermeprokisch/see/compare/v0.8.0...v0.8.1) (2024-09-14)
 
 
