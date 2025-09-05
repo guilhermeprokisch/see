@@ -45,7 +45,7 @@ fn main() -> std::io::Result<()> {
                         }
                     } else {
                         let content = app::read_content(Some(path.to_string_lossy().into_owned()))?;
-                        if !io::stdout().is_terminal() {
+                        if !config.force_rich_output && !io::stdout().is_terminal() {
                             print!("{}", content);
                         } else {
                             viewer_manager.visualize(
@@ -60,7 +60,7 @@ fn main() -> std::io::Result<()> {
         }
         _ => {
             let content = app::read_content(None)?;
-            if !io::stdout().is_terminal() {
+            if !config.force_rich_output && !io::stdout().is_terminal() {
                 print!("{}", content);
             } else {
                 viewer_manager.visualize(&["markdown".to_string()], &content, None)?;
