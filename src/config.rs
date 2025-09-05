@@ -24,6 +24,7 @@ pub struct AppConfig {
     pub debug_mode: bool,
     pub use_colors: bool,
     pub convert_html: bool,
+    pub force_rich_output: bool,
 }
 
 impl AppConfig {
@@ -61,6 +62,7 @@ impl AppConfig {
             debug_mode: false,
             use_colors: true,
             convert_html: true,
+            force_rich_output: false,
         }
     }
 
@@ -89,7 +91,7 @@ pub fn get_config() -> &'static AppConfig {
 pub fn initialize_app() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
     let (mut config, file_paths) = parse_cli_args()?;
 
-    if !std::io::stdout().is_terminal() {
+    if !config.force_rich_output && !std::io::stdout().is_terminal() {
         config.use_colors = false;
     }
 
@@ -130,6 +132,9 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
                 "convert-html" => config.convert_html = parse_bool(parts.get(1).map(|s| *s)),
                 "show-filename" => config.show_filename = parse_bool(parts.get(1).map(|s| *s)),
                 "use-colors" => config.use_colors = parse_bool(parts.get(1).map(|s| *s)),
+                "force-rich-output" => {
+                    config.force_rich_output = parse_bool(parts.get(1).map(|s| *s))
+                }
                 "config" => {
                     if let Some(path) = parts.get(1) {
                         if let Ok(file_config) = AppConfig::load_from_file(Path::new(path)) {

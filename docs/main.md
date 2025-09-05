@@ -24,7 +24,8 @@ If FILE is not provided, see reads from standard input.
 | `--show-line-numbers`    | Show or hide line numbers when rendering code files |
 | `--show-filename`        | Show or hide the filename before rendering content  |
 | `--config <file>`        | Specify a custom configuration file                 |
-| `--use-colors`            | Control color output                                |
+| `--use-colors`           | Control color output                                |
+| `--force-rich-output`    | Enable rich output, even if stdout is not a tty     |
 | `--convert-html`         | Enable or disable HTML to Markdown conversion       |
 
 ## Examples
@@ -80,7 +81,13 @@ see --render-table-borders=true path/to/your/markdown_file.md
 Disable color output when piping to another command:
 
 ```bash
-see --use-colors=false path/to/your/markdown_file.rs | less
+see --use-colors=false path/to/your/markdown_file.md | less
+```
+
+Enable color output when piping to another command:
+
+```bash
+see --force-rich-output=true path/to/your/markdown_file.md | less -R
 ```
 
 Render content without showing the filename:
