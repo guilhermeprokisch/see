@@ -17,6 +17,9 @@ pub fn detect_language(path: &str) -> String {
             let lang = detection.language().to_lowercase();
             match lang.as_str() {
                 "shell" => "bash".to_string(),
+                // HACK: Map C++ to C for better highlighter (the C++ one doesn't work)
+                // FIXME: Use better highlighter for C++ then default inkject/tree-sitter one
+                "c++" => "c".to_string(),
                 _ => lang
             }
         },
