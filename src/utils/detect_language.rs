@@ -17,9 +17,9 @@ pub fn detect_language(path: &str) -> String {
             let lang = detection.language().to_lowercase();
             match lang.as_str() {
                 "shell" => "bash".to_string(),
-                _ => lang
+                _ => lang,
             }
-        },
+        }
         Ok(None) | Err(_) => {
             // Fallback to extension-based detection if hyperpolyglot fails
             path.extension()

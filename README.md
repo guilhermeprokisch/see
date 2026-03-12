@@ -142,6 +142,24 @@ If you prefer to build from source or want to contribute to the project:
 
 This will compile the project and install the `see` binary in your Cargo bin directory, which should be in your PATH.
 
+### 6. Using Nix
+
+This repository now includes a `flake.nix` for development and builds.
+
+```bash
+nix develop
+```
+
+This opens a shell with the Rust toolchain and common development tools such as `rust-analyzer`, `clippy`, and `rustfmt`.
+
+To build the project with Nix:
+
+```bash
+nix build
+```
+
+The resulting binary will be available under `./result/bin/see`.
+
 #### Integration with CLI Tools
 
 see can be easily integrated with CLI tools to replace traditional man pages with rich Markdown documentation. Here's an example of how you can use see with a custom CLI tool's --help flag:
@@ -199,6 +217,7 @@ render_images = true
 render_links = true
 render_table_borders = false
 show_line_numbers = true
+syntax_theme = "github_light"
 ```
 
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
@@ -206,8 +225,17 @@ show_line_numbers = true
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
 - `show_line_numbers`: If true, line numbers will be shown for code files (can also be set with `--line-numbers` option)
+- `syntax_theme`: Lumis theme name used for syntax highlighting, for example `github_light`, `tokyonight`, `dracula`, or `catppuccin_mocha`
 
-Note: see uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) thanks to [inkjet](https://github.com/Colonial-Dev/inkjet) for syntax highlighting. Currently, only one theme is implemented, but there are plans to make see compatible with Helix editor themes in the future, which will greatly expand customization options.
+For dark terminals, a good starting point is:
+
+```toml
+syntax_theme = "tokyonight"
+```
+
+Other themes worth trying are `dracula`, `catppuccin_mocha`, `kanagawa`, and `onedark`.
+
+Note: see uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) via [lumis](https://github.com/leandrocp/lumis) for syntax highlighting. If `syntax_theme` is invalid, see falls back to Lumis' built-in `github_light` theme.
 
 ## Contributing
 

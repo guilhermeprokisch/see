@@ -24,6 +24,8 @@ pub struct AppConfig {
     pub debug_mode: bool,
     pub use_colors: bool,
     pub convert_html: bool,
+    #[serde(default = "default_syntax_theme")]
+    pub syntax_theme: String,
 }
 
 impl AppConfig {
@@ -61,6 +63,7 @@ impl AppConfig {
             debug_mode: false,
             use_colors: true,
             convert_html: true,
+            syntax_theme: default_syntax_theme(),
         }
     }
 
@@ -189,6 +192,10 @@ fn parse_bool(value: Option<&str>) -> bool {
 
 fn parse_u32(value: Option<&str>) -> Option<u32> {
     value.and_then(|v| v.parse().ok())
+}
+
+fn default_syntax_theme() -> String {
+    "github_light".to_string()
 }
 
 fn render_help() -> io::Result<()> {
