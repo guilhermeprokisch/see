@@ -261,7 +261,7 @@ syntax_extensions = { ino = "cpp", pde = "cpp" }
 - `syntax_theme`: Lumis theme name used for syntax highlighting, for example `github_light`, `tokyonight`, `dracula`, or `catppuccin_mocha`
 - `syntax_extensions`: Map file extensions to Lumis language names, for example `ino = "cpp"` or `tpl = "html"`
 
-In page mode, long lines are soft-wrapped to the viewport width. Use `r` to force a reload and `q` to quit. With `--watch`, see automatically refreshes when the file changes.
+In page mode, long lines are soft-wrapped to the viewport width. Use `r` to force a reload and `q` to quit. With `--watch`, see automatically refreshes when the file changes and follows the bottom by default until you scroll away.
 
 For dark terminals, a good starting point is:
 

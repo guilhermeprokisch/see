@@ -10,6 +10,7 @@ use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 
 fn main() -> std::io::Result<()> {
+    let stdin_is_terminal = io::stdin().is_terminal();
     let stdout_is_terminal =
         io::stdout().is_terminal() || std::env::var_os("SEE_FORCE_INTERACTIVE").is_some();
     let (config, file_paths) = initialize_app()?;
@@ -18,7 +19,12 @@ fn main() -> std::io::Result<()> {
         eprintln!("Configuration: {:?}", config);
     }
 
-    if should_enable_page_mode(&config, file_paths.as_deref(), stdout_is_terminal) {
+    if should_enable_page_mode(
+        &config,
+        file_paths.as_deref(),
+        stdin_is_terminal,
+        stdout_is_terminal,
+    ) {
         return run_page_mode(file_paths.clone());
     }
 
@@ -75,6 +81,7 @@ fn main() -> std::io::Result<()> {
 fn should_enable_page_mode(
     config: &AppConfig,
     file_paths: Option<&[PathBuf]>,
+    _stdin_is_terminal: bool,
     stdout_is_terminal: bool,
 ) -> bool {
     if !stdout_is_terminal {
