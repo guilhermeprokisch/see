@@ -124,8 +124,13 @@ jobs:
         with:
           ref: ${{ github.ref }}
           submodules: recursive
-      - name: Install cargo-dist
-        shell: ${{ matrix.install_dist.shell }}
+      - name: Install cargo-dist (Windows)
+        if: ${{ startsWith(matrix.runner, 'windows') }}
+        shell: pwsh
+        run: ${{ matrix.install_dist.run }}
+      - name: Install cargo-dist (Unix)
+        if: ${{ !startsWith(matrix.runner, 'windows') }}
+        shell: sh
         run: ${{ matrix.install_dist.run }}
       # Get the dist-manifest
       - name: Fetch local artifacts
