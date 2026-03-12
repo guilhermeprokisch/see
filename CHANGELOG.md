@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.9.0](https://github.com/guilhermeprokisch/see/compare/v0.8.1...v0.9.0) (2026-03-12)
+
+### Features
+
+* add built-in page mode for long rendered output
+* add file watch mode with bottom-following live preview
+* add library API and HTML rendering support
+* add configurable syntax themes and file extension language mappings
+* add Nix flake support for development and builds
+
+### Bug Fixes
+
+* fix shell script syntax highlighting
+* fix URL rendering when links touch surrounding text
+
 ## [0.8.1](https://github.com/guilhermeprokisch/see/compare/v0.8.0...v0.8.1) (2024-09-14)
 
 
