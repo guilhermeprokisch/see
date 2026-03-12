@@ -8,10 +8,6 @@ see [OPTIONS] [FILE]
 
 If FILE is not provided, see reads from standard input.
 
-## Tradeoff
-
-`see` intentionally bundles broad built-in syntax highlighting support. This keeps usage simple and avoids extra language installation steps, but it also makes the binary larger than a minimal language set would.
-
 ## Options
 
 |                          |                                                     |
@@ -90,8 +86,6 @@ Page mode keys:
 q quit
 r reload
 j / k scroll
-/ search
-n / N next or previous match
 PgUp / PgDn page
 g / G top or bottom
 ```
@@ -125,3 +119,7 @@ Convert HTML to Markdown:
 ```bash
 see --convert-html=true path/to/your/file_with_html.md
 ```
+
+## Tradeoff
+
+`see` intentionally bundles broad built-in syntax highlighting support. This keeps usage simple and avoids extra language installation steps, but it also makes the binary larger than a minimal language set would.

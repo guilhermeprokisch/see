@@ -12,7 +12,7 @@ use std::time::{Duration, Instant, SystemTime};
 use unicode_width::UnicodeWidthChar;
 
 const STATUS_HELP: &str =
-    "q quit  r reload  j/k scroll  / search  n/N next-prev  PgUp/PgDn page  g/G top/bottom";
+    "q quit  r reload  j/k scroll  PgUp/PgDn page  g/G top/bottom";
 const ESC: char = '\x1b';
 
 pub fn run_page_mode(file_paths: Option<Vec<PathBuf>>) -> io::Result<()> {
@@ -121,21 +121,12 @@ impl WatchState {
     }
 }
 
-enum Mode {
-    View,
-    SearchInput,
-}
-
 struct InternalPager {
     source_lines: Vec<String>,
-    searchable_lines: Vec<String>,
     wrapped_lines: Vec<DisplayLine>,
     first_wrap_for_source: Vec<usize>,
     wrapped_cols: u16,
     top_row: usize,
-    mode: Mode,
-    search_input: String,
-    last_search: Option<String>,
     status_message: Option<String>,
     watch_state: Option<WatchState>,
     anchor_source_line: usize,
@@ -151,21 +142,12 @@ impl InternalPager {
             source_lines.push(String::new());
         }
 
-        let searchable_lines = source_lines
-            .iter()
-            .map(|line| strip_control_sequences(line))
-            .collect();
-
         Self {
             source_lines,
-            searchable_lines,
             wrapped_lines: Vec::new(),
             first_wrap_for_source: Vec::new(),
             wrapped_cols: 0,
             top_row: 0,
-            mode: Mode::View,
-            search_input: String::new(),
-            last_search: None,
             status_message: None,
             watch_state,
             anchor_source_line: 0,
@@ -198,13 +180,8 @@ impl InternalPager {
                     let (_, rows) = terminal::size()?;
                     let page_height = rows.saturating_sub(1) as usize;
 
-                    match self.mode {
-                        Mode::View => {
-                            if self.handle_view_key(key.code, page_height)? {
-                                return Ok(());
-                            }
-                        }
-                        Mode::SearchInput => self.handle_search_key(key.code)?,
+                    if self.handle_view_key(key.code, page_height)? {
+                        return Ok(());
                     }
                 }
                 Event::Resize(_, _) => self.ensure_wrapped_lines()?,
@@ -223,48 +200,10 @@ impl InternalPager {
             KeyCode::PageUp => self.scroll_up(page_height.max(1)),
             KeyCode::Char('g') => self.top_row = 0,
             KeyCode::Char('G') => self.top_row = self.max_top_row(page_height),
-            KeyCode::Char('/') => {
-                self.mode = Mode::SearchInput;
-                self.search_input = self.last_search.clone().unwrap_or_default();
-                self.status_message = None;
-            }
-            KeyCode::Char('n') => self.jump_to_match(true),
-            KeyCode::Char('N') => self.jump_to_match(false),
             _ => {}
         }
 
         Ok(false)
-    }
-
-    fn handle_search_key(&mut self, code: KeyCode) -> io::Result<()> {
-        match code {
-            KeyCode::Esc => {
-                self.mode = Mode::View;
-                self.search_input.clear();
-                self.status_message = None;
-            }
-            KeyCode::Enter => {
-                let query = self.search_input.trim().to_string();
-                self.mode = Mode::View;
-                self.search_input.clear();
-
-                if query.is_empty() {
-                    self.status_message = Some("empty search".to_string());
-                } else {
-                    self.last_search = Some(query);
-                    self.jump_to_match(true);
-                }
-            }
-            KeyCode::Backspace => {
-                self.search_input.pop();
-            }
-            KeyCode::Char(ch) => {
-                self.search_input.push(ch);
-            }
-            _ => {}
-        }
-
-        Ok(())
     }
 
     fn draw(&mut self, stdout: &mut io::Stdout) -> io::Result<()> {
@@ -399,45 +338,32 @@ impl InternalPager {
         if self.source_lines.is_empty() {
             self.source_lines.push(String::new());
         }
-        self.searchable_lines = self
-            .source_lines
-            .iter()
-            .map(|line| strip_control_sequences(line))
-            .collect();
         self.wrapped_lines.clear();
         self.first_wrap_for_source.clear();
         self.wrapped_cols = 0;
     }
 
     fn status_line(&self, page_height: usize) -> String {
-        match self.mode {
-            Mode::SearchInput => format!("/{}", self.search_input),
-            Mode::View => {
-                let total_rows = self.wrapped_lines.len();
-                let end_row = (self.top_row + page_height).min(total_rows);
-                let mut status = format!(
-                    " see page  rows {}-{} / {}  {}",
-                    self.top_row.saturating_add(1).min(total_rows.max(1)),
-                    end_row,
-                    total_rows,
-                    STATUS_HELP
-                );
+        let total_rows = self.wrapped_lines.len();
+        let end_row = (self.top_row + page_height).min(total_rows);
+        let mut status = format!(
+            " see page  rows {}-{} / {}  {}",
+            self.top_row.saturating_add(1).min(total_rows.max(1)),
+            end_row,
+            total_rows,
+            STATUS_HELP
+        );
 
-                if self.watch_state.is_some() {
-                    status.push_str("  watching");
-                }
-
-                if let Some(message) = &self.status_message {
-                    status.push_str("  ");
-                    status.push_str(message);
-                } else if let Some(query) = &self.last_search {
-                    status.push_str("  /");
-                    status.push_str(query);
-                }
-
-                status
-            }
+        if self.watch_state.is_some() {
+            status.push_str("  watching");
         }
+
+        if let Some(message) = &self.status_message {
+            status.push_str("  ");
+            status.push_str(message);
+        }
+
+        status
     }
 
     fn scroll_down(&mut self, count: usize) {
@@ -463,57 +389,6 @@ impl InternalPager {
             .get(self.top_row)
             .map(|line| line.source_line)
             .unwrap_or(0)
-    }
-
-    fn jump_to_match(&mut self, forward: bool) {
-        let Some(query) = self.last_search.as_ref().map(|query| query.to_lowercase()) else {
-            self.status_message = Some("no active search".to_string());
-            return;
-        };
-
-        let current_source = self.current_source_line();
-        let next_match = if forward {
-            self.find_match_forward(&query, current_source.saturating_add(1))
-                .or_else(|| self.find_match_forward(&query, 0))
-        } else {
-            current_source
-                .checked_sub(1)
-                .and_then(|start| self.find_match_backward(&query, start))
-                .or_else(|| {
-                    self.find_match_backward(&query, self.searchable_lines.len().saturating_sub(1))
-                })
-        };
-
-        if let Some(source_line) = next_match {
-            self.top_row = self
-                .first_wrap_for_source
-                .get(source_line)
-                .copied()
-                .unwrap_or(0);
-            self.anchor_source_line = source_line;
-            self.status_message = Some(format!("match line {}", source_line + 1));
-        } else {
-            self.status_message = Some(format!("no matches for /{}", query));
-        }
-    }
-
-    fn find_match_forward(&self, query: &str, start: usize) -> Option<usize> {
-        self.searchable_lines
-            .iter()
-            .enumerate()
-            .skip(start)
-            .find(|(_, line)| line.to_lowercase().contains(query))
-            .map(|(index, _)| index)
-    }
-
-    fn find_match_backward(&self, query: &str, start: usize) -> Option<usize> {
-        self.searchable_lines
-            .iter()
-            .enumerate()
-            .take(start.saturating_add(1))
-            .rev()
-            .find(|(_, line)| line.to_lowercase().contains(query))
-            .map(|(index, _)| index)
     }
 }
 
@@ -636,24 +511,6 @@ fn update_active_sequences(sequence: &str, active_sgr: &mut String, active_link:
             *active_link = sequence.to_string();
         }
     }
-}
-
-fn strip_control_sequences(line: &str) -> String {
-    let mut stripped = String::new();
-    let mut index = 0;
-
-    while index < line.len() {
-        if let Some((_, next_index)) = consume_control_sequence(line, index) {
-            index = next_index;
-            continue;
-        }
-
-        let ch = line[index..].chars().next().unwrap_or('\0');
-        stripped.push(ch);
-        index += ch.len_utf8();
-    }
-
-    stripped
 }
 
 fn file_signature(path: &PathBuf) -> FileSignature {
