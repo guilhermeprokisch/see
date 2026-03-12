@@ -21,9 +21,7 @@ jobs:
       version: ${{ steps.extract_version.outputs.version }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.RELEASE_BOT }}
+        uses: actions/checkout@v4
       - name: Extract version from commit message or input
         id: extract_version
         run: |
@@ -54,7 +52,7 @@ jobs:
             git push origin v$VERSION
           fi
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   publish:
     name: Publish to crates.io
@@ -63,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: crates.io
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - uses: swatinem/rust-cache@v2
       - name: Publish
         run: >
@@ -133,12 +131,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
-        with:
-          token: ${{ secrets.RELEASE_BOT }}
+        uses: actions/checkout@v4
       - name: Remove labels from release PR
         env:
-          GH_TOKEN: ${{ secrets.RELEASE_BOT }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           VERSION: ${{ needs.create-tag.outputs.version }}
         run: |
           PR_NUMBER=$(gh pr list --state closed --limit 1 --search "chore(main): release $VERSION in:title" --json number --jq '.[0].number')
