@@ -1,12 +1,14 @@
 use crate::config::initialize_app;
+use crate::page::run_page_mode;
 use crate::viewers::{determine_viewer, ViewerManager};
 use std::io::{self, IsTerminal};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 mod app;
 mod config;
 mod constants;
 mod directory_tree;
+mod page;
 mod render;
 mod utils;
 mod viewers;
@@ -15,10 +17,16 @@ use base64::{engine::general_purpose, Engine as _};
 use std::fs;
 
 fn main() -> std::io::Result<()> {
+    let stdout_is_terminal =
+        io::stdout().is_terminal() || std::env::var_os("SEE_FORCE_INTERACTIVE").is_some();
     let (config, file_paths) = initialize_app()?;
     if config.debug_mode {
         eprintln!("Debug mode enabled");
         eprintln!("Configuration: {:?}", config);
+    }
+
+    if should_enable_page_mode(&config, file_paths.as_deref(), stdout_is_terminal) {
+        return run_page_mode();
     }
 
     let viewer_manager = ViewerManager::new();
@@ -37,7 +45,7 @@ fn main() -> std::io::Result<()> {
                         let extension = path.extension().unwrap().to_str().unwrap();
                         let content = format!("data:image/{};base64,{}", extension, b64);
 
-                        if !io::stdout().is_terminal() {
+                        if !stdout_is_terminal {
                             let file_name = path.file_name().unwrap().to_str().unwrap();
                             println!("![{}]({})", file_name, content);
                         } else {
@@ -45,7 +53,7 @@ fn main() -> std::io::Result<()> {
                         }
                     } else {
                         let content = app::read_content(Some(path.to_string_lossy().into_owned()))?;
-                        if !io::stdout().is_terminal() {
+                        if !stdout_is_terminal {
                             print!("{}", content);
                         } else {
                             viewer_manager.visualize(
@@ -60,7 +68,7 @@ fn main() -> std::io::Result<()> {
         }
         _ => {
             let content = app::read_content(None)?;
-            if !io::stdout().is_terminal() {
+            if !stdout_is_terminal {
                 print!("{}", content);
             } else {
                 viewer_manager.visualize(&["markdown".to_string()], &content, None)?;
@@ -69,4 +77,24 @@ fn main() -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+fn should_enable_page_mode(
+    config: &config::AppConfig,
+    file_paths: Option<&[PathBuf]>,
+    stdout_is_terminal: bool,
+) -> bool {
+    if !config.page || !stdout_is_terminal {
+        return false;
+    }
+
+    match file_paths {
+        Some(paths) => !paths.iter().any(|path| {
+            path.is_file()
+                && determine_viewer(path.as_path())
+                    .iter()
+                    .any(|viewer| viewer == "image")
+        }),
+        None => true,
+    }
 }

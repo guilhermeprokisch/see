@@ -213,6 +213,7 @@ Here's an example of what you can configure:
 ```toml
 max_image_width = 40
 max_image_height = 13
+page = false
 render_images = true
 render_links = true
 render_table_borders = false
@@ -221,6 +222,7 @@ syntax_theme = "github_light"
 ```
 
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
+- `page`: If true, open text output in see's built-in page mode when writing to a terminal
 - `render_images`: If false, images will not be rendered
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)

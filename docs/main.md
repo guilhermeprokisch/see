@@ -18,6 +18,7 @@ If FILE is not provided, see reads from standard input.
 | `--generate-config`      | Generate a default configuration file               |
 | `--max-image-width`      | Set maximum width for rendered images               |
 | `--max-image-height`     | Set maximum height for rendered images              |
+| `--page`                 | Enable or disable built-in page mode for text output |
 | `--render-images`        | Enable or disable image rendering                   |
 | `--render-links`         | Enable or disable clickable links                   |
 | `--render-table-borders` | Enable or disable table borders in rendered output  |
@@ -63,6 +64,12 @@ Render with maximum image dimensions:
 
 ```bash
 see --max-image-width=60 --max-image-height=20 path/to/your/markdown_file.md
+```
+
+Enable page mode:
+
+```bash
+see --page=true path/to/your/markdown_file.md
 ```
 
 Disable image rendering:

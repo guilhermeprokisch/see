@@ -16,6 +16,8 @@ static CONFIG: OnceLock<AppConfig> = OnceLock::new();
 pub struct AppConfig {
     pub max_image_width: Option<u32>,
     pub max_image_height: Option<u32>,
+    #[serde(default)]
+    pub page: bool,
     pub render_images: bool,
     pub render_links: bool,
     pub render_table_borders: bool,
@@ -55,6 +57,7 @@ impl AppConfig {
         AppConfig {
             max_image_width: Some(100),
             max_image_height: Some(13),
+            page: false,
             render_images: true,
             render_links: true,
             render_table_borders: false,
@@ -92,7 +95,8 @@ pub fn get_config() -> &'static AppConfig {
 pub fn initialize_app() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
     let (mut config, file_paths) = parse_cli_args()?;
 
-    if !std::io::stdout().is_terminal() {
+    let force_colors = env::var_os("SEE_FORCE_COLORS").is_some();
+    if !std::io::stdout().is_terminal() && !force_colors {
         config.use_colors = false;
     }
 
@@ -122,6 +126,7 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
                 "debug" => config.debug_mode = parse_bool(parts.get(1).map(|s| *s)),
                 "max-image-width" => config.max_image_width = parse_u32(parts.get(1).map(|s| *s)),
                 "max-image-height" => config.max_image_height = parse_u32(parts.get(1).map(|s| *s)),
+                "page" | "pager" => config.page = parse_bool(parts.get(1).map(|s| *s)),
                 "render-images" => config.render_images = parse_bool(parts.get(1).map(|s| *s)),
                 "render-links" => config.render_links = parse_bool(parts.get(1).map(|s| *s)),
                 "render-table-borders" => {
