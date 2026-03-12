@@ -99,6 +99,15 @@ The easiest and fastest way to install see is by using our shell script:
 curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.0/see-cat-installer.sh | sh
 ```
 
+If your shell config is managed by Nix/Home Manager or another setup that makes files like `~/.zshrc` read-only, disable the installer's PATH edits and source Cargo's env file yourself:
+
+```sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.0/see-cat-installer.sh | SEE_CAT_NO_MODIFY_PATH=1 sh
+source "$HOME/.cargo/env"
+```
+
+If `see` is still shadowed after installation, another `see` earlier in your `PATH` is taking precedence. Running `command -v see` will show which one your shell is using.
+
 ### 2. Using prebuilt binaries from GitHub releases
 
 If you prefer to manually download and install the binary:
@@ -117,7 +126,23 @@ If you're using Homebrew, you can install see with:
 brew install guilhermeprokisch/see/see
 ```
 
-### 4. Using Cargo
+### 4. Using Nix
+
+If you use Nixpkgs directly, package updates may lag behind GitHub releases because that package is maintained separately from this repository.
+
+To try the version currently packaged in Nixpkgs:
+
+```sh
+nix-shell -p see-cat
+```
+
+To build the version from this repository instead, use the local flake:
+
+```sh
+nix build .#see
+```
+
+### 5. Using Cargo
 
 You can install see directly from crates.io using Cargo:
 
@@ -127,7 +152,7 @@ cargo install see-cat
 
 This will download, compile, and install the latest version of see. Make sure your Rust installation is up to date.
 
-### 5. Building from Source
+### 6. Building from Source
 
 If you prefer to build from source or want to contribute to the project:
 

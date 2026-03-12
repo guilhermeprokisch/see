@@ -20,7 +20,7 @@
 
         see = pkgs.rustPlatform.buildRustPackage {
           pname = "see";
-          version = "0.8.1";
+          version = "0.9.0";
 
           src = ./.;
           cargoLock.lockFile = ./Cargo.lock;
@@ -48,6 +48,7 @@
         packages = {
           default = see;
           see = see;
+          see-cat = see;
         };
 
         devShells.default = pkgs.mkShell {
