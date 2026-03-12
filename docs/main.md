@@ -72,6 +72,17 @@ Enable page mode:
 see --page=true path/to/your/markdown_file.md
 ```
 
+Page mode keys:
+
+```text
+q quit
+j / k scroll
+/ search
+n / N next or previous match
+PgUp / PgDn page
+g / G top or bottom
+```
+
 Disable image rendering:
 
 ```bash

@@ -229,6 +229,8 @@ syntax_theme = "github_light"
 - `show_line_numbers`: If true, line numbers will be shown for code files (can also be set with `--line-numbers` option)
 - `syntax_theme`: Lumis theme name used for syntax highlighting, for example `github_light`, `tokyonight`, `dracula`, or `catppuccin_mocha`
 
+In page mode, long lines are soft-wrapped to the viewport width and `/` opens an in-pager search prompt. Use `n` and `N` to move between matches.
+
 For dark terminals, a good starting point is:
 
 ```toml

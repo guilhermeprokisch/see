@@ -43,6 +43,7 @@ hyperpolyglot = "0.1.7"
 devicons = "0.1.0"
 htmd = "0.1.6"
 base64 = "0.22.1"
+unicode-width = "0.1.14"
 
 
 # The profile that 'cargo dist' will build with
