@@ -68,6 +68,12 @@ To render a Markdown file, simply pass the path to the file as an argument:
 see path/to/your/markdown_file.md
 ```
 
+For a live preview in a second tmux pane while you edit:
+
+```bash
+see --watch path/to/your/markdown_file.md
+```
+
 ### 3. Rendering Markdown from Piped Input
 
 see can also read Markdown content from standard input:
@@ -214,6 +220,8 @@ Here's an example of what you can configure:
 max_image_width = 40
 max_image_height = 13
 page = false
+watch = false
+watch_interval_ms = 250
 render_images = true
 render_links = true
 render_table_borders = false
@@ -223,13 +231,15 @@ syntax_theme = "github_light"
 
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
 - `page`: If true, open text output in see's built-in page mode when writing to a terminal
+- `watch`: If true, keep a file preview open and reload it after writes
+- `watch_interval_ms`: Polling interval used by watch mode
 - `render_images`: If false, images will not be rendered
 - `render_links`: If false, links will not be clickable
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
 - `show_line_numbers`: If true, line numbers will be shown for code files (can also be set with `--line-numbers` option)
 - `syntax_theme`: Lumis theme name used for syntax highlighting, for example `github_light`, `tokyonight`, `dracula`, or `catppuccin_mocha`
 
-In page mode, long lines are soft-wrapped to the viewport width and `/` opens an in-pager search prompt. Use `n` and `N` to move between matches.
+In page mode, long lines are soft-wrapped to the viewport width and `/` opens an in-pager search prompt. Use `n` and `N` to move between matches, `r` to force a reload, and `q` to quit. With `--watch`, see automatically refreshes when the file changes.
 
 For dark terminals, a good starting point is:
 

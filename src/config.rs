@@ -18,6 +18,10 @@ pub struct AppConfig {
     pub max_image_height: Option<u32>,
     #[serde(default)]
     pub page: bool,
+    #[serde(default)]
+    pub watch: bool,
+    #[serde(default = "default_watch_interval_ms")]
+    pub watch_interval_ms: u64,
     pub render_images: bool,
     pub render_links: bool,
     pub render_table_borders: bool,
@@ -58,6 +62,8 @@ impl AppConfig {
             max_image_width: Some(100),
             max_image_height: Some(13),
             page: false,
+            watch: false,
+            watch_interval_ms: default_watch_interval_ms(),
             render_images: true,
             render_links: true,
             render_table_borders: false,
@@ -127,6 +133,11 @@ fn parse_cli_args() -> io::Result<(AppConfig, Option<Vec<PathBuf>>)> {
                 "max-image-width" => config.max_image_width = parse_u32(parts.get(1).map(|s| *s)),
                 "max-image-height" => config.max_image_height = parse_u32(parts.get(1).map(|s| *s)),
                 "page" | "pager" => config.page = parse_bool(parts.get(1).map(|s| *s)),
+                "watch" => config.watch = parse_bool(parts.get(1).map(|s| *s)),
+                "watch-interval-ms" => {
+                    config.watch_interval_ms =
+                        parse_u64(parts.get(1).map(|s| *s)).unwrap_or(default_watch_interval_ms())
+                }
                 "render-images" => config.render_images = parse_bool(parts.get(1).map(|s| *s)),
                 "render-links" => config.render_links = parse_bool(parts.get(1).map(|s| *s)),
                 "render-table-borders" => {
@@ -199,8 +210,16 @@ fn parse_u32(value: Option<&str>) -> Option<u32> {
     value.and_then(|v| v.parse().ok())
 }
 
+fn parse_u64(value: Option<&str>) -> Option<u64> {
+    value.and_then(|v| v.parse().ok())
+}
+
 fn default_syntax_theme() -> String {
     "github_light".to_string()
+}
+
+fn default_watch_interval_ms() -> u64 {
+    250
 }
 
 fn render_help() -> io::Result<()> {

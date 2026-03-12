@@ -1,20 +1,23 @@
+use crate::config::get_config;
 use crossterm::cursor::{Hide, MoveTo, Show};
 use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::{execute, queue};
 use std::env;
+use std::fs;
 use std::io::{self, Write};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::time::Duration;
+use std::time::{Duration, Instant, SystemTime};
 use unicode_width::UnicodeWidthChar;
 
 const STATUS_HELP: &str =
-    "q quit  j/k scroll  / search  n/N next-prev  PgUp/PgDn page  g/G top/bottom";
+    "q quit  r reload  j/k scroll  / search  n/N next-prev  PgUp/PgDn page  g/G top/bottom";
 const ESC: char = '\x1b';
 
-pub fn run_page_mode() -> io::Result<()> {
+pub fn run_page_mode(file_paths: Option<Vec<PathBuf>>) -> io::Result<()> {
     let rendered = capture_rendered_output()?;
-    let mut pager = InternalPager::new(rendered);
+    let mut pager = InternalPager::new(rendered, WatchState::from_paths(file_paths));
     pager.run()
 }
 
@@ -26,8 +29,8 @@ fn capture_rendered_output() -> io::Result<String> {
             let value = arg.to_string_lossy();
             !matches!(
                 value.as_ref(),
-                "--page" | "--page=true" | "--pager" | "--pager=true"
-            )
+                "--page" | "--page=true" | "--pager" | "--pager=true" | "--watch" | "--watch=true"
+            ) && !value.starts_with("--watch-interval-ms=")
         })
         .collect();
 
@@ -56,6 +59,68 @@ struct DisplayLine {
     source_line: usize,
 }
 
+#[derive(Clone, PartialEq, Eq)]
+struct FileSignature {
+    exists: bool,
+    len: u64,
+    modified: Option<SystemTime>,
+}
+
+struct WatchState {
+    paths: Vec<PathBuf>,
+    signatures: Vec<FileSignature>,
+    interval: Duration,
+    last_check: Instant,
+}
+
+impl WatchState {
+    fn from_paths(file_paths: Option<Vec<PathBuf>>) -> Option<Self> {
+        let config = get_config();
+        if !config.watch {
+            return None;
+        }
+
+        let paths: Vec<PathBuf> = file_paths
+            .unwrap_or_default()
+            .into_iter()
+            .filter(|path| path.is_file())
+            .collect();
+
+        if paths.is_empty() {
+            return None;
+        }
+
+        let signatures = paths.iter().map(file_signature).collect();
+        Some(Self {
+            paths,
+            signatures,
+            interval: Duration::from_millis(config.watch_interval_ms.max(50)),
+            last_check: Instant::now(),
+        })
+    }
+
+    fn should_check(&self) -> bool {
+        self.last_check.elapsed() >= self.interval
+    }
+
+    fn has_changed(&mut self) -> bool {
+        self.last_check = Instant::now();
+        let mut changed = false;
+
+        for (index, path) in self.paths.iter().enumerate() {
+            let signature = file_signature(path);
+            if self.signatures.get(index) != Some(&signature) {
+                changed = true;
+                if let Some(existing) = self.signatures.get_mut(index) {
+                    *existing = signature;
+                }
+            }
+        }
+
+        changed
+    }
+}
+
 enum Mode {
     View,
     SearchInput,
@@ -72,10 +137,12 @@ struct InternalPager {
     search_input: String,
     last_search: Option<String>,
     status_message: Option<String>,
+    watch_state: Option<WatchState>,
+    anchor_source_line: usize,
 }
 
 impl InternalPager {
-    fn new(rendered: String) -> Self {
+    fn new(rendered: String, watch_state: Option<WatchState>) -> Self {
         let mut source_lines: Vec<String> = rendered.lines().map(|line| line.to_string()).collect();
         if rendered.ends_with('\n') {
             source_lines.push(String::new());
@@ -100,6 +167,8 @@ impl InternalPager {
             search_input: String::new(),
             last_search: None,
             status_message: None,
+            watch_state,
+            anchor_source_line: 0,
         }
     }
 
@@ -117,9 +186,10 @@ impl InternalPager {
 
     fn event_loop(&mut self, stdout: &mut io::Stdout) -> io::Result<()> {
         loop {
+            self.maybe_reload()?;
             self.draw(stdout)?;
 
-            if !event::poll(Duration::from_millis(250))? {
+            if !event::poll(Duration::from_millis(50))? {
                 continue;
             }
 
@@ -146,6 +216,7 @@ impl InternalPager {
     fn handle_view_key(&mut self, code: KeyCode, page_height: usize) -> io::Result<bool> {
         match code {
             KeyCode::Char('q') => return Ok(true),
+            KeyCode::Char('r') => self.reload_from_source()?,
             KeyCode::Char('j') | KeyCode::Down => self.scroll_down(1),
             KeyCode::Char('k') | KeyCode::Up => self.scroll_up(1),
             KeyCode::PageDown | KeyCode::Char(' ') => self.scroll_down(page_height.max(1)),
@@ -236,7 +307,7 @@ impl InternalPager {
             return Ok(());
         }
 
-        let previous_source_line = self.current_source_line();
+        let previous_source_line = self.anchor_source_line;
         let page_height = rows.saturating_sub(1) as usize;
 
         self.wrapped_cols = width;
@@ -278,6 +349,66 @@ impl InternalPager {
         Ok(())
     }
 
+    fn maybe_reload(&mut self) -> io::Result<()> {
+        let should_reload = self
+            .watch_state
+            .as_ref()
+            .map(|state| state.should_check())
+            .unwrap_or(false);
+
+        if !should_reload {
+            return Ok(());
+        }
+
+        if self
+            .watch_state
+            .as_mut()
+            .map(|state| state.has_changed())
+            .unwrap_or(false)
+        {
+            self.reload_from_source()?;
+        }
+
+        Ok(())
+    }
+
+    fn reload_from_source(&mut self) -> io::Result<()> {
+        match capture_rendered_output() {
+            Ok(rendered) => {
+                self.set_rendered(rendered);
+                if self.watch_state.is_some() {
+                    self.top_row = 0;
+                    self.anchor_source_line = 0;
+                }
+                self.status_message = Some("reloaded".to_string());
+            }
+            Err(err) => {
+                self.status_message = Some(format!("reload failed: {}", err));
+            }
+        }
+
+        Ok(())
+    }
+
+    fn set_rendered(&mut self, rendered: String) {
+        self.anchor_source_line = self.current_source_line();
+        self.source_lines = rendered.lines().map(|line| line.to_string()).collect();
+        if rendered.ends_with('\n') {
+            self.source_lines.push(String::new());
+        }
+        if self.source_lines.is_empty() {
+            self.source_lines.push(String::new());
+        }
+        self.searchable_lines = self
+            .source_lines
+            .iter()
+            .map(|line| strip_control_sequences(line))
+            .collect();
+        self.wrapped_lines.clear();
+        self.first_wrap_for_source.clear();
+        self.wrapped_cols = 0;
+    }
+
     fn status_line(&self, page_height: usize) -> String {
         match self.mode {
             Mode::SearchInput => format!("/{}", self.search_input),
@@ -291,6 +422,10 @@ impl InternalPager {
                     total_rows,
                     STATUS_HELP
                 );
+
+                if self.watch_state.is_some() {
+                    status.push_str("  watching");
+                }
 
                 if let Some(message) = &self.status_message {
                     status.push_str("  ");
@@ -309,11 +444,13 @@ impl InternalPager {
         let (_, rows) = terminal::size().unwrap_or((0, 1));
         let page_height = rows.saturating_sub(1) as usize;
         self.top_row = (self.top_row + count).min(self.max_top_row(page_height));
+        self.anchor_source_line = self.current_source_line();
         self.status_message = None;
     }
 
     fn scroll_up(&mut self, count: usize) {
         self.top_row = self.top_row.saturating_sub(count);
+        self.anchor_source_line = self.current_source_line();
         self.status_message = None;
     }
 
@@ -353,6 +490,7 @@ impl InternalPager {
                 .get(source_line)
                 .copied()
                 .unwrap_or(0);
+            self.anchor_source_line = source_line;
             self.status_message = Some(format!("match line {}", source_line + 1));
         } else {
             self.status_message = Some(format!("no matches for /{}", query));
@@ -516,4 +654,19 @@ fn strip_control_sequences(line: &str) -> String {
     }
 
     stripped
+}
+
+fn file_signature(path: &PathBuf) -> FileSignature {
+    match fs::metadata(path) {
+        Ok(metadata) => FileSignature {
+            exists: true,
+            len: metadata.len(),
+            modified: metadata.modified().ok(),
+        },
+        Err(_) => FileSignature {
+            exists: false,
+            len: 0,
+            modified: None,
+        },
+    }
 }

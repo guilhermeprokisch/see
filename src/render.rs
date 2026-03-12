@@ -30,9 +30,34 @@ lazy_static! {
 }
 
 pub fn render_markdown(ast: &Value) -> io::Result<()> {
+    reset_render_state();
     render_node(ast)?;
     render_footnotes()?;
     Ok(())
+}
+
+fn reset_render_state() {
+    if let Ok(mut current_heading_level) = CURRENT_HEADING_LEVEL.lock() {
+        *current_heading_level = 0;
+    }
+    if let Ok(mut content_indent_level) = CONTENT_INDENT_LEVEL.lock() {
+        *content_indent_level = 0;
+    }
+    if let Ok(mut list_stack) = LIST_STACK.lock() {
+        list_stack.clear();
+    }
+    if let Ok(mut ordered_list_stack) = ORDERED_LIST_STACK.lock() {
+        ordered_list_stack.clear();
+    }
+    if let Ok(mut definitions) = LINK_DEFINITIONS.lock() {
+        definitions.clear();
+    }
+    if let Ok(mut definitions) = shared::LINK_DEFINITIONS.lock() {
+        definitions.clear();
+    }
+    if let Ok(mut footnotes) = shared::FOOTNOTES.lock() {
+        footnotes.clear();
+    }
 }
 
 fn render_node(node: &Value) -> io::Result<()> {

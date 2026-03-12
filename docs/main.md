@@ -19,6 +19,8 @@ If FILE is not provided, see reads from standard input.
 | `--max-image-width`      | Set maximum width for rendered images               |
 | `--max-image-height`     | Set maximum height for rendered images              |
 | `--page`                 | Enable or disable built-in page mode for text output |
+| `--watch`                | Keep the preview open and auto-reload when the file changes |
+| `--watch-interval-ms`    | Polling interval for `--watch` in milliseconds      |
 | `--render-images`        | Enable or disable image rendering                   |
 | `--render-links`         | Enable or disable clickable links                   |
 | `--render-table-borders` | Enable or disable table borders in rendered output  |
@@ -72,10 +74,17 @@ Enable page mode:
 see --page=true path/to/your/markdown_file.md
 ```
 
+Enable live preview while editing in another tmux pane:
+
+```bash
+see --watch path/to/your/markdown_file.md
+```
+
 Page mode keys:
 
 ```text
 q quit
+r reload
 j / k scroll
 / search
 n / N next or previous match

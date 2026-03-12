@@ -26,7 +26,7 @@ fn main() -> std::io::Result<()> {
     }
 
     if should_enable_page_mode(&config, file_paths.as_deref(), stdout_is_terminal) {
-        return run_page_mode();
+        return run_page_mode(file_paths.clone());
     }
 
     let viewer_manager = ViewerManager::new();
@@ -84,7 +84,23 @@ fn should_enable_page_mode(
     file_paths: Option<&[PathBuf]>,
     stdout_is_terminal: bool,
 ) -> bool {
-    if !config.page || !stdout_is_terminal {
+    if !stdout_is_terminal {
+        return false;
+    }
+
+    if config.watch {
+        return match file_paths {
+            Some(paths) if !paths.is_empty() => !paths.iter().any(|path| {
+                path.is_file()
+                    && determine_viewer(path.as_path())
+                        .iter()
+                        .any(|viewer| viewer == "image")
+            }),
+            _ => false,
+        };
+    }
+
+    if !config.page {
         return false;
     }
 
