@@ -42,6 +42,14 @@ pub fn read_content(file_path: Option<String>) -> io::Result<String> {
 
 pub fn parse_and_process_markdown(content: &str) -> io::Result<Value> {
     let config = get_config();
+    parse_and_process_markdown_with_config(content, config, true)
+}
+
+pub fn parse_and_process_markdown_with_config(
+    content: &str,
+    config: &AppConfig,
+    apply_terminal_tweaks: bool,
+) -> io::Result<Value> {
     let mut md_options = markdown::ParseOptions::gfm();
     if !config.render_links {
         md_options.constructs.autolink = false;
@@ -55,8 +63,10 @@ pub fn parse_and_process_markdown(content: &str) -> io::Result<Value> {
 
     ast::process_definitions(&json);
     ast::process_footnotes(&json);
-    ast::modify_heading_ast(&mut json);
-    ast::modify_list_item_ast(&mut json);
+    if apply_terminal_tweaks {
+        ast::modify_heading_ast(&mut json);
+        ast::modify_list_item_ast(&mut json);
+    }
 
     Ok(json)
 }

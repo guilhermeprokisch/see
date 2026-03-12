@@ -31,12 +31,6 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 - Blockquote styling
 - And more coming soon!
 
-## Tradeoff
-
-`see` currently ships with broad built-in syntax highlighting support by bundling a large Tree-sitter language set in the application. This keeps setup simple and makes highlighting work out of the box for many languages, but it also makes the binary larger than it would be with a smaller curated language set or an extension system.
-
-This is an intentional tradeoff: `see` currently prefers simplicity and broad built-in support over a smaller binary and a more complex install/runtime language management model.
-
 # Motivation and Context
 
 The primary goal of **see** _(smd before v0.4.0)_ was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
@@ -197,6 +191,26 @@ In this example, create a Markdown file at `~/.mycli/help.md` with your CLI docu
 
 This approach allows you to maintain a single source of documentation that's readable in raw form, rendered nicely in the terminal, and viewable in web browsers.
 
+## Library Usage
+
+`see-cat` can now also be used as a library for HTML rendering from a Rust host.
+
+```rust
+use see_cat::{render_markdown_to_html, HtmlRenderOptions};
+
+fn main() -> std::io::Result<()> {
+    let html = render_markdown_to_html("# Hello from see", &HtmlRenderOptions::default())?;
+    println!("{}", html);
+    Ok(())
+}
+```
+
+There are also helpers for files and code blocks:
+
+```rust
+use see_cat::{render_code_to_html, render_file_to_html, HtmlRenderOptions};
+```
+
 #### Viewing see's Own Documentation
 
 see uses itself to display its own documentation. You can view see's documentation directly in your terminal by running:
@@ -275,14 +289,14 @@ Contributions are welcome! Please feel free to submit a Pull Request. As this pr
 
 As this is an alpha version, you may encounter bugs or incomplete features.
 
+## Tradeoff
+
+`see` currently ships with broad built-in syntax highlighting support by bundling a large Tree-sitter language set in the application. This keeps setup simple and makes highlighting work out of the box for many languages, but it also makes the binary larger than it would be with a smaller curated language set or an extension system.
+
+This is an intentional tradeoff: `see` currently prefers simplicity and broad built-in support over a smaller binary and a more complex install/runtime language management model.
+
 ## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## TODO:
-
-1. Extended Markdown Support
-
-2. Improve syntax highlighting
 
 3. Theming and Customization: Develop user-customizable color schemes and rendering options

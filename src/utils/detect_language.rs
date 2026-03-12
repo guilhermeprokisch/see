@@ -8,7 +8,7 @@ pub fn detect_language(path: &str) -> String {
     detect_language_with_extensions(path, &config.syntax_extensions)
 }
 
-fn detect_language_with_extensions(
+pub fn detect_language_with_extensions(
     path: &str,
     syntax_extensions: &HashMap<String, String>,
 ) -> String {

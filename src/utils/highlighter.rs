@@ -1,6 +1,6 @@
 use lumis::languages::Language;
 use lumis::themes::Theme;
-use lumis::{themes, write_highlight, TerminalBuilder};
+use lumis::{formatter::Formatter, themes, write_highlight, HtmlInlineBuilder, TerminalBuilder};
 use std::io::{self, Write};
 use std::str::FromStr;
 use termcolor::Color;
@@ -32,7 +32,27 @@ pub fn line_number_color() -> Option<Color> {
 
 fn selected_theme() -> Result<Theme, lumis::themes::ThemeError> {
     let config = get_config();
-    themes::get(&config.syntax_theme).or_else(|_| themes::get("github_light"))
+    selected_theme_by_name(&config.syntax_theme)
+}
+
+fn selected_theme_by_name(name: &str) -> Result<Theme, lumis::themes::ThemeError> {
+    themes::get(name).or_else(|_| themes::get("github_light"))
+}
+
+pub fn highlight_code_html(code: &str, lang: &str, theme_name: &str) -> io::Result<String> {
+    let theme = selected_theme_by_name(theme_name).map_err(|e| io::Error::other(e.to_string()))?;
+    let formatter = HtmlInlineBuilder::new()
+        .lang(Language::from_str(lang).unwrap_or(Language::PlainText))
+        .theme(Some(theme))
+        .build()
+        .map_err(|e| io::Error::other(e.to_string()))?;
+
+    let mut output = Vec::new();
+    formatter
+        .format(code, &mut output)
+        .map_err(|e| io::Error::other(e.to_string()))?;
+
+    String::from_utf8(output).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
 }
 
 fn color_from_hex(hex: &str) -> Option<Color> {

@@ -1,17 +1,10 @@
-use crate::config::initialize_app;
-use crate::page::run_page_mode;
-use crate::viewers::{determine_viewer, ViewerManager};
+use see_cat::app;
+use see_cat::config::{initialize_app, AppConfig};
+use see_cat::directory_tree;
+use see_cat::page::run_page_mode;
+use see_cat::viewers::{determine_viewer, ViewerManager};
 use std::io::{self, IsTerminal};
 use std::path::{Path, PathBuf};
-
-mod app;
-mod config;
-mod constants;
-mod directory_tree;
-mod page;
-mod render;
-mod utils;
-mod viewers;
 
 use base64::{engine::general_purpose, Engine as _};
 use std::fs;
@@ -80,7 +73,7 @@ fn main() -> std::io::Result<()> {
 }
 
 fn should_enable_page_mode(
-    config: &config::AppConfig,
+    config: &AppConfig,
     file_paths: Option<&[PathBuf]>,
     stdout_is_terminal: bool,
 ) -> bool {
