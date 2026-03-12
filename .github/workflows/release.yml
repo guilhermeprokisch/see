@@ -40,6 +40,11 @@ permissions:
 # will be marked as a prerelease.
 on:
   pull_request:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag to build and publish (e.g. v0.9.0)"
+        required: true
   push:
     tags:
       - '**[0-9]+.[0-9]+.[0-9]+*'
@@ -50,14 +55,15 @@ jobs:
     runs-on: "ubuntu-20.04"
     outputs:
       val: ${{ steps.plan.outputs.manifest }}
-      tag: ${{ !github.event.pull_request && github.ref_name || '' }}
-      tag-flag: ${{ !github.event.pull_request && format('--tag={0}', github.ref_name) || '' }}
-      publishing: ${{ !github.event.pull_request }}
+      tag: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || (!github.event.pull_request && github.ref_name || '') }}
+      tag-flag: ${{ github.event_name == 'workflow_dispatch' && format('--tag={0}', inputs.tag) || (!github.event.pull_request && format('--tag={0}', github.ref_name) || '') }}
+      publishing: ${{ github.event_name == 'workflow_dispatch' || !github.event.pull_request }}
     env:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           submodules: recursive
       - name: Install cargo-dist
         # we specify bash to get pipefail; it guards against the `curl` command
@@ -76,7 +82,7 @@ jobs:
       # but also really annoying to build CI around when it needs secrets to work right.)
       - id: plan
         run: |
-          cargo dist ${{ (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
+          cargo dist ${{ github.event_name == 'workflow_dispatch' && format('host --steps=create --tag={0}', inputs.tag) || (!github.event.pull_request && format('host --steps=create --tag={0}', github.ref_name)) || 'plan' }} --output-format=json > plan-dist-manifest.json
           echo "cargo dist ran successfully"
           cat plan-dist-manifest.json
           echo "manifest=$(jq -c "." plan-dist-manifest.json)" >> "$GITHUB_OUTPUT"
@@ -116,6 +122,7 @@ jobs:
           git config --global core.longpaths true
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           submodules: recursive
       - name: Install cargo-dist
         run: ${{ matrix.install_dist }}
@@ -167,6 +174,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           submodules: recursive
       - name: Install cached cargo-dist
         uses: actions/download-artifact@v4
@@ -216,6 +224,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
           submodules: recursive
       - name: Install cached cargo-dist
         uses: actions/download-artifact@v4
@@ -259,7 +268,7 @@ jobs:
           PRERELEASE_FLAG: "${{ fromJson(steps.host.outputs.manifest).announcement_is_prerelease && '--prerelease' || '' }}"
           ANNOUNCEMENT_TITLE: "${{ fromJson(steps.host.outputs.manifest).announcement_title }}"
           ANNOUNCEMENT_BODY: "${{ fromJson(steps.host.outputs.manifest).announcement_github_body }}"
-          RELEASE_COMMIT: "${{ github.sha }}"
+          RELEASE_COMMIT: "${{ github.event_name == 'workflow_dispatch' && needs.plan.outputs.tag || github.sha }}"
         run: |
           # Write and read notes from a file to avoid quoting breaking things
           echo "$ANNOUNCEMENT_BODY" > $RUNNER_TEMP/notes.txt
