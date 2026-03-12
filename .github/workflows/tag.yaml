@@ -43,8 +43,16 @@ jobs:
           VERSION=${{ steps.extract_version.outputs.version }}
           git config user.name Guilherme Prokisch
           git config user.email guilherme.prokisch@gmail.com
-          git tag -a v$VERSION -m "Release v$VERSION"
-          git push origin v$VERSION
+          if git rev-parse "v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists locally"
+          else
+            git tag -a v$VERSION -m "Release v$VERSION"
+          fi
+          if git ls-remote --exit-code --tags origin "refs/tags/v$VERSION" >/dev/null 2>&1; then
+            echo "Tag v$VERSION already exists on origin"
+          else
+            git push origin v$VERSION
+          fi
         env:
           GH_TOKEN: ${{ secrets.RELEASE_BOT }}
 
@@ -120,7 +128,7 @@ jobs:
 
   cleanup-pr-labels:
     name: Remove labels from release PR
-    needs: [create-tag, publish, publish-aur]
+    needs: [create-tag, publish]
     if: needs.create-tag.outputs.version != ''
     runs-on: ubuntu-latest
     steps:
