@@ -31,6 +31,12 @@ see is a powerful file visualization tool for the terminal, offering advanced co
 - Blockquote styling
 - And more coming soon!
 
+## Tradeoff
+
+`see` currently ships with broad built-in syntax highlighting support by bundling a large Tree-sitter language set in the application. This keeps setup simple and makes highlighting work out of the box for many languages, but it also makes the binary larger than it would be with a smaller curated language set or an extension system.
+
+This is an intentional tradeoff: `see` currently prefers simplicity and broad built-in support over a smaller binary and a more complex install/runtime language management model.
+
 # Motivation and Context
 
 The primary goal of **see** _(smd before v0.4.0)_ was to create a unified tool for viewing both CLI documentation in Markdown and code files, renderable in both the terminal and web browse
@@ -227,6 +233,7 @@ render_links = true
 render_table_borders = false
 show_line_numbers = true
 syntax_theme = "github_light"
+syntax_extensions = { ino = "cpp", pde = "cpp" }
 ```
 
 - `max_image_width` and `max_image_height`: Maximum dimensions for rendered images
@@ -238,6 +245,7 @@ syntax_theme = "github_light"
 - `render_table_borders`: If true, tables will be rendered with ASCII borders (default: false)
 - `show_line_numbers`: If true, line numbers will be shown for code files (can also be set with `--line-numbers` option)
 - `syntax_theme`: Lumis theme name used for syntax highlighting, for example `github_light`, `tokyonight`, `dracula`, or `catppuccin_mocha`
+- `syntax_extensions`: Map file extensions to Lumis language names, for example `ino = "cpp"` or `tpl = "html"`
 
 In page mode, long lines are soft-wrapped to the viewport width and `/` opens an in-pager search prompt. Use `n` and `N` to move between matches, `r` to force a reload, and `q` to quit. With `--watch`, see automatically refreshes when the file changes.
 
@@ -250,6 +258,14 @@ syntax_theme = "tokyonight"
 Other themes worth trying are `dracula`, `catppuccin_mocha`, `kanagawa`, and `onedark`.
 
 Note: see uses [tree-sitter](https://github.com/tree-sitter/tree-sitter) via [lumis](https://github.com/leandrocp/lumis) for syntax highlighting. If `syntax_theme` is invalid, see falls back to Lumis' built-in `github_light` theme.
+
+Note: `see` uses Lumis with broad built-in language support. That improves out-of-the-box highlighting coverage, but it also increases binary size.
+
+If you want to force syntax highlighting for custom file types, add them to `syntax_extensions`:
+
+```toml
+syntax_extensions = { ino = "cpp", h = "c", templ = "html" }
+```
 
 ## Contributing
 

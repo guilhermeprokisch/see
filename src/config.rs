@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::env;
 use std::fs;
 use std::io;
@@ -32,6 +33,8 @@ pub struct AppConfig {
     pub convert_html: bool,
     #[serde(default = "default_syntax_theme")]
     pub syntax_theme: String,
+    #[serde(default)]
+    pub syntax_extensions: HashMap<String, String>,
 }
 
 impl AppConfig {
@@ -45,7 +48,7 @@ impl AppConfig {
         }
     }
 
-    fn load_from_file(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
+    pub(crate) fn load_from_file(path: &Path) -> Result<Self, Box<dyn std::error::Error>> {
         let content = fs::read_to_string(path)?;
         let config: AppConfig = toml::from_str(&content)?;
         Ok(config)
@@ -73,6 +76,7 @@ impl AppConfig {
             use_colors: true,
             convert_html: true,
             syntax_theme: default_syntax_theme(),
+            syntax_extensions: HashMap::new(),
         }
     }
 

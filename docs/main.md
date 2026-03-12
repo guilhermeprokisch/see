@@ -8,6 +8,10 @@ see [OPTIONS] [FILE]
 
 If FILE is not provided, see reads from standard input.
 
+## Tradeoff
+
+`see` intentionally bundles broad built-in syntax highlighting support. This keeps usage simple and avoids extra language installation steps, but it also makes the binary larger than a minimal language set would.
+
 ## Options
 
 |                          |                                                     |
@@ -27,7 +31,7 @@ If FILE is not provided, see reads from standard input.
 | `--show-line-numbers`    | Show or hide line numbers when rendering code files |
 | `--show-filename`        | Show or hide the filename before rendering content  |
 | `--config <file>`        | Specify a custom configuration file                 |
-| `--use-colors`            | Control color output                                |
+| `--use-colors`           | Control color output                                |
 | `--convert-html`         | Enable or disable HTML to Markdown conversion       |
 
 ## Examples
