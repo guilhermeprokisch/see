@@ -17,6 +17,7 @@ use crate::config::get_config;
 use crate::constants::DEBUG_MODE;
 use crate::utils::download_image;
 use crate::utils::highlight_code;
+use crate::utils::line_number_color;
 use crate::utils::shared;
 
 lazy_static! {
@@ -741,7 +742,8 @@ pub fn render_code_file(content: &str, mut language: &str) -> io::Result<()> {
 
     for (i, line) in lines.iter().enumerate() {
         if config.show_line_numbers && config.use_colors {
-            stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
+            let number_color = line_number_color().unwrap_or(Color::Cyan);
+            stdout.set_color(ColorSpec::new().set_fg(Some(number_color)))?;
             write!(stdout, "{:>width$} │ ", i + 1, width = max_line_num_width)?;
             stdout.reset()?;
         }
