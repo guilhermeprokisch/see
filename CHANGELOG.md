@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.9.1](https://github.com/guilhermeprokisch/see/compare/v0.9.0...v0.9.1) (2026-03-15)
+
+### Bug Fixes
+
+* fix recursive page-mode startup when `page = true` is enabled in config
+* add pager capture regression coverage for config-driven paging
+
 ## [0.9.0](https://github.com/guilhermeprokisch/see/compare/v0.8.1...v0.9.0) (2026-03-12)
 
 ### Features

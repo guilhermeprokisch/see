@@ -93,16 +93,16 @@ There are several ways to install see:
 The easiest and fastest way to install see is by using our shell script:
 
 > [!IMPORTANT]  
-> The version number in the URL bellow (v0.9.0) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.\*\*
+> The version number in the URL bellow (v0.9.1) may not be the latest version. Please check the [releases page](https://github.com/guilhermeprokisch/see/releases) for the most recent version and update the URL accordingly before running the command.\*\*
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.0/see-cat-installer.sh | sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.1/see-cat-installer.sh | sh
 ```
 
 If your shell config is managed by Nix/Home Manager or another setup that makes files like `~/.zshrc` read-only, disable the installer's PATH edits and source Cargo's env file yourself:
 
 ```sh
-curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.0/see-cat-installer.sh | SEE_CAT_NO_MODIFY_PATH=1 sh
+curl --proto '=https' --tlsv1.2 -LsSf https://github.com/guilhermeprokisch/see/releases/download/v0.9.1/see-cat-installer.sh | SEE_CAT_NO_MODIFY_PATH=1 sh
 source "$HOME/.cargo/env"
 ```
 

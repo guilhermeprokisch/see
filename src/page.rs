@@ -4,6 +4,7 @@ use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use crossterm::terminal::{self, Clear, ClearType, EnterAlternateScreen, LeaveAlternateScreen};
 use crossterm::{execute, queue};
 use std::env;
+use std::ffi::OsString;
 use std::fs;
 use std::io::{self, Write};
 use std::path::PathBuf;
@@ -11,8 +12,7 @@ use std::process::{Command, Stdio};
 use std::time::{Duration, Instant, SystemTime};
 use unicode_width::UnicodeWidthChar;
 
-const STATUS_HELP: &str =
-    "q quit  r reload  j/k scroll  PgUp/PgDn page  g/G top/bottom";
+const STATUS_HELP: &str = "q quit  r reload  j/k scroll  PgUp/PgDn page  g/G top/bottom";
 const ESC: char = '\x1b';
 pub fn run_page_mode(file_paths: Option<Vec<PathBuf>>) -> io::Result<()> {
     let rendered = capture_rendered_output(None)?;
@@ -27,25 +27,10 @@ fn run_rendered_page_mode(rendered: String, watch_state: Option<WatchState>) -> 
 
 fn capture_rendered_output(input: Option<&str>) -> io::Result<String> {
     let current_exe = env::current_exe()?;
-    let filtered_args: Vec<_> = env::args_os()
-        .skip(1)
-        .filter(|arg| {
-            let value = arg.to_string_lossy();
-            !matches!(
-                value.as_ref(),
-                "--page"
-                    | "--page=true"
-                    | "--pager"
-                    | "--pager=true"
-                    | "--watch"
-                    | "--watch=true"
-            ) && !value.starts_with("--watch-interval-ms=")
-        })
-        .collect();
+    let filtered_args = render_capture_args(env::args_os().skip(1));
 
     let mut child = Command::new(current_exe)
         .args(filtered_args)
-        .arg("--render-images=false")
         .env("SEE_FORCE_COLORS", "1")
         .env("SEE_FORCE_INTERACTIVE", "1")
         .stdin(if input.is_some() {
@@ -73,6 +58,31 @@ fn capture_rendered_output(input: Option<&str>) -> io::Result<String> {
             output.status
         )))
     }
+}
+
+fn render_capture_args(args: impl IntoIterator<Item = OsString>) -> Vec<OsString> {
+    let mut filtered_args: Vec<_> = args
+        .into_iter()
+        .filter(|arg| {
+            let value = arg.to_string_lossy();
+            !is_page_capture_flag(&value)
+        })
+        .collect();
+
+    // The pager re-runs `see` to capture rendered output. Force the child down
+    // the plain render path so config-driven paging or watching cannot recurse.
+    filtered_args.push(OsString::from("--page=false"));
+    filtered_args.push(OsString::from("--watch=false"));
+    filtered_args.push(OsString::from("--render-images=false"));
+    filtered_args
+}
+
+fn is_page_capture_flag(value: &str) -> bool {
+    matches!(value, "--page" | "--pager" | "--watch")
+        || value.starts_with("--page=")
+        || value.starts_with("--pager=")
+        || value.starts_with("--watch=")
+        || value.starts_with("--watch-interval-ms=")
 }
 
 #[derive(Clone)]
@@ -400,10 +410,7 @@ impl InternalPager {
     }
 
     fn reload_from_source(&mut self) -> io::Result<()> {
-        let input = self
-            .watch_state
-            .as_ref()
-            .map(|_| String::new());
+        let input = self.watch_state.as_ref().map(|_| String::new());
 
         match capture_rendered_output(input.as_deref()) {
             Ok(rendered) => {
@@ -498,6 +505,58 @@ impl InternalPager {
             .get(self.top_row)
             .map(|line| line.source_line)
             .unwrap_or(0)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::render_capture_args;
+    use std::ffi::OsString;
+
+    #[test]
+    fn render_capture_args_disable_recursive_modes() {
+        let args = vec![
+            OsString::from("--page"),
+            OsString::from("--watch=true"),
+            OsString::from("--watch-interval-ms=1000"),
+            OsString::from("README.md"),
+        ];
+
+        let filtered = render_capture_args(args);
+
+        assert_eq!(
+            filtered,
+            vec![
+                OsString::from("README.md"),
+                OsString::from("--page=false"),
+                OsString::from("--watch=false"),
+                OsString::from("--render-images=false"),
+            ]
+        );
+    }
+
+    #[test]
+    fn render_capture_args_strip_config_overrides_before_appending_false() {
+        let args = vec![
+            OsString::from("--config=/tmp/see.toml"),
+            OsString::from("--pager=false"),
+            OsString::from("--page=true"),
+            OsString::from("--watch=false"),
+            OsString::from("docs/main.md"),
+        ];
+
+        let filtered = render_capture_args(args);
+
+        assert_eq!(
+            filtered,
+            vec![
+                OsString::from("--config=/tmp/see.toml"),
+                OsString::from("docs/main.md"),
+                OsString::from("--page=false"),
+                OsString::from("--watch=false"),
+                OsString::from("--render-images=false"),
+            ]
+        );
     }
 }
 
