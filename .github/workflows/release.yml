@@ -275,14 +275,24 @@ jobs:
           PRERELEASE_FLAG: "${{ fromJson(steps.host.outputs.manifest).announcement_is_prerelease && '--prerelease' || '' }}"
           ANNOUNCEMENT_TITLE: "${{ fromJson(steps.host.outputs.manifest).announcement_title }}"
           ANNOUNCEMENT_BODY: "${{ fromJson(steps.host.outputs.manifest).announcement_github_body }}"
-          RELEASE_COMMIT: "${{ github.event_name == 'workflow_dispatch' && needs.plan.outputs.tag || github.sha }}"
+          RELEASE_COMMIT: "${{ github.sha }}"
+          RELEASE_TAG: "${{ needs.plan.outputs.tag }}"
         run: |
           # Write and read notes from a file to avoid quoting breaking things
           echo "$ANNOUNCEMENT_BODY" > $RUNNER_TEMP/notes.txt
-          if gh release view "${{ needs.plan.outputs.tag }}" >/dev/null 2>&1; then
-            gh release upload "${{ needs.plan.outputs.tag }}" artifacts/* --clobber
+          if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+            gh release upload "$RELEASE_TAG" artifacts/* --clobber
           else
-            gh release create "${{ needs.plan.outputs.tag }}" --target "$RELEASE_COMMIT" $PRERELEASE_FLAG --title "$ANNOUNCEMENT_TITLE" --notes-file "$RUNNER_TEMP/notes.txt" artifacts/*
+            RELEASE_TARGET="$RELEASE_COMMIT"
+            TAG_TARGET=$(git ls-remote origin "refs/tags/${RELEASE_TAG}^{}" | awk 'NR == 1 { print $1 }')
+            if [[ -z "$TAG_TARGET" ]]; then
+              TAG_TARGET=$(git ls-remote origin "refs/tags/${RELEASE_TAG}" | awk 'NR == 1 { print $1 }')
+            fi
+            if [[ -n "$TAG_TARGET" ]]; then
+              RELEASE_TARGET="$TAG_TARGET"
+            fi
+
+            gh release create "$RELEASE_TAG" --target "$RELEASE_TARGET" $PRERELEASE_FLAG --title "$ANNOUNCEMENT_TITLE" --notes-file "$RUNNER_TEMP/notes.txt" artifacts/*
           fi
 
   publish-homebrew-formula:
@@ -314,6 +324,7 @@ jobs:
         run: |
           git config --global user.name "${GITHUB_USER}"
           git config --global user.email "${GITHUB_EMAIL}"
+          changed=0
 
           for release in $(echo "$PLAN" | jq --compact-output '.releases[] | select([.artifacts[] | endswith(".rb")] | any)'); do
             filename=$(echo "$release" | jq '.artifacts[] | select(endswith(".rb"))' --raw-output)
@@ -326,9 +337,20 @@ jobs:
             brew style --except-cops FormulaAudit/Homepage,FormulaAudit/Desc,FormulaAuditStrict --fix "Formula/${filename}" || true
 
             git add "Formula/${filename}"
+            if git diff --cached --quiet -- "Formula/${filename}"; then
+              echo "No formula changes for ${name} ${version}"
+              continue
+            fi
+
             git commit -m "${name} ${version}"
+            changed=1
           done
-          git push
+
+          if [[ "$changed" -eq 1 ]]; then
+            git push
+          else
+            echo "No Homebrew formula changes to push"
+          fi
 
   announce:
     needs:
