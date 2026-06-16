@@ -160,16 +160,17 @@ fn format_text(text: &str) -> String {
     let leading = text.starts_with(char::is_whitespace);
     let trailing = text.ends_with(char::is_whitespace);
 
-    let mut out = String::new();
+    let mut out = String::with_capacity(text.len());
     if leading {
         out.push(' ');
     }
 
-    let words: Vec<&str> = text.split_whitespace().collect();
-    for (i, word) in words.iter().enumerate() {
-        if i > 0 {
+    let mut has_content = false;
+    for word in text.split_whitespace() {
+        if has_content {
             out.push(' ');
         }
+        has_content = true;
         if let Some(emoji) = parse_emoji(word) {
             out.push_str(&emoji);
         } else {
@@ -179,7 +180,7 @@ fn format_text(text: &str) -> String {
 
     // Only emit a trailing space when there was actual content; for a
     // whitespace-only node the leading space above already represents it.
-    if trailing && !words.is_empty() {
+    if trailing && has_content {
         out.push(' ');
     }
 
@@ -428,8 +429,9 @@ fn render_link(node: &Value) -> io::Result<()> {
     if !config.render_links {
         render_children(node)?;
     } else {
-        // Add a space before the link reference
-        print!(" ");
+        // No surrounding spaces here: adjacent text nodes carry their own
+        // boundary whitespace (see format_text), so padding here would double
+        // the spaces around the link.
         // Start OSC 8 hyperlink
         print!("\x1B]8;;{}\x1B\\", url);
 
@@ -445,9 +447,6 @@ fn render_link(node: &Value) -> io::Result<()> {
 
         // End OSC 8 hyperlink
         print!("\x1B]8;;\x1B\\");
-
-        // Add a space after the link reference
-        print!(" ");
     }
 
     Ok(())
@@ -561,7 +560,9 @@ fn render_delete(node: &Value) -> io::Result<()> {
 fn render_inline_code(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))?;
-    print!(" {} ", node["value"].as_str().unwrap_or(""));
+    // No surrounding spaces here: adjacent text nodes carry their own boundary
+    // whitespace (see format_text), so padding here would double the spaces.
+    print!("{}", node["value"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
 }
