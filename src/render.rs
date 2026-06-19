@@ -143,20 +143,48 @@ fn render_heading(node: &Value) -> io::Result<()> {
 }
 
 fn render_text(node: &Value) -> io::Result<()> {
-    let text = node["value"].as_str().unwrap_or("");
-    let words: Vec<&str> = text.split_whitespace().collect();
+    print!("{}", format_text(node["value"].as_str().unwrap_or("")));
+    Ok(())
+}
 
-    for (i, word) in words.iter().enumerate() {
-        if i > 0 {
-            print!(" ");
+/// Render a text node to a string, normalizing internal whitespace runs
+/// (including soft line breaks) to single spaces while preserving the
+/// whitespace at the boundaries of the node.
+///
+/// Preserving the boundary whitespace keeps inline spans like **bold** or
+/// *italic* separated from adjacent text. The parser splits
+/// "The **controller** runs" into the text node "The ", a strong node, and the
+/// text node " runs"; collapsing those boundary spaces would glue the words
+/// together ("Thecontrollerruns").
+fn format_text(text: &str) -> String {
+    let leading = text.starts_with(char::is_whitespace);
+    let trailing = text.ends_with(char::is_whitespace);
+
+    let mut out = String::with_capacity(text.len());
+    if leading {
+        out.push(' ');
+    }
+
+    let mut has_content = false;
+    for word in text.split_whitespace() {
+        if has_content {
+            out.push(' ');
         }
+        has_content = true;
         if let Some(emoji) = parse_emoji(word) {
-            print!("{}", emoji);
+            out.push_str(&emoji);
         } else {
-            print!("{}", word);
+            out.push_str(word);
         }
     }
-    Ok(())
+
+    // Only emit a trailing space when there was actual content; for a
+    // whitespace-only node the leading space above already represents it.
+    if trailing && has_content {
+        out.push(' ');
+    }
+
+    out
 }
 
 fn parse_emoji(word: &str) -> Option<String> {
@@ -401,8 +429,9 @@ fn render_link(node: &Value) -> io::Result<()> {
     if !config.render_links {
         render_children(node)?;
     } else {
-        // Add a space before the link reference
-        print!(" ");
+        // No surrounding spaces here: adjacent text nodes carry their own
+        // boundary whitespace (see format_text), so padding here would double
+        // the spaces around the link.
         // Start OSC 8 hyperlink
         print!("\x1B]8;;{}\x1B\\", url);
 
@@ -418,9 +447,6 @@ fn render_link(node: &Value) -> io::Result<()> {
 
         // End OSC 8 hyperlink
         print!("\x1B]8;;\x1B\\");
-
-        // Add a space after the link reference
-        print!(" ");
     }
 
     Ok(())
@@ -534,7 +560,9 @@ fn render_delete(node: &Value) -> io::Result<()> {
 fn render_inline_code(node: &Value) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
     stdout.set_color(ColorSpec::new().set_fg(Some(Color::Yellow)).set_bold(true))?;
-    print!(" {} ", node["value"].as_str().unwrap_or(""));
+    // No surrounding spaces here: adjacent text nodes carry their own boundary
+    // whitespace (see format_text), so padding here would double the spaces.
+    print!("{}", node["value"].as_str().unwrap_or(""));
     stdout.reset()?;
     Ok(())
 }
@@ -831,4 +859,56 @@ fn render_html(node: &Value) -> io::Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::format_text;
+
+    #[test]
+    fn preserves_space_before_inline_span() {
+        // Text node that precedes a **bold** span keeps its trailing space.
+        assert_eq!(format_text("The "), "The ");
+    }
+
+    #[test]
+    fn preserves_space_after_inline_span() {
+        // Text node that follows a **bold** span keeps its leading space.
+        assert_eq!(format_text(" runs"), " runs");
+    }
+
+    #[test]
+    fn preserves_both_boundary_spaces() {
+        assert_eq!(format_text(" and decides "), " and decides ");
+    }
+
+    #[test]
+    fn normalizes_internal_whitespace() {
+        assert_eq!(format_text("foo   bar\nbaz"), "foo bar baz");
+    }
+
+    #[test]
+    fn preserves_boundaries_while_normalizing_internal() {
+        assert_eq!(format_text("  foo   bar  "), " foo bar ");
+    }
+
+    #[test]
+    fn whitespace_only_node_collapses_to_single_space() {
+        assert_eq!(format_text("   "), " ");
+    }
+
+    #[test]
+    fn empty_node_stays_empty() {
+        assert_eq!(format_text(""), "");
+    }
+
+    #[test]
+    fn no_boundary_whitespace_is_untouched() {
+        assert_eq!(format_text("controller"), "controller");
+    }
+
+    #[test]
+    fn expands_emoji_shortcodes() {
+        assert_eq!(format_text("hello :smile:"), "hello 😄");
+    }
 }
