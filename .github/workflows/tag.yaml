@@ -22,6 +22,12 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
+        with:
+          # Use the PAT so the tag push below is authored by a real user token.
+          # Tags pushed with the default GITHUB_TOKEN do NOT trigger other
+          # workflows, which is why release.yml (the GitHub Release build) never
+          # fired on tag pushes and had to be dispatched manually.
+          token: ${{ secrets.RELEASE_BOT }}
       - name: Extract version from commit message or input
         id: extract_version
         run: |
