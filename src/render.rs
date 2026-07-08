@@ -74,6 +74,7 @@ fn render_node(node: &Value) -> io::Result<()> {
         Some("listItem") => render_list_item(node)?,
         Some("blockquote") => render_blockquote(node)?,
         Some("thematicBreak") => render_thematic_break()?,
+        Some("break") => render_break()?,
         Some("link") => render_link(node)?,
         Some("image") => render_image(node)?,
         Some("emphasis") => render_emphasis(node)?,
@@ -143,13 +144,24 @@ fn render_heading(node: &Value) -> io::Result<()> {
 }
 
 fn render_text(node: &Value) -> io::Result<()> {
-    print!("{}", format_text(node["value"].as_str().unwrap_or("")));
+    let text = node["value"].as_str().unwrap_or("");
+
+    // A newline inside a text value is a soft line break. Split on it so each
+    // source line stays on its own line (as pagers like glow render markdown)
+    // instead of letting format_text collapse it into a single space.
+    for (line_idx, line) in text.split('\n').enumerate() {
+        if line_idx > 0 {
+            render_break()?;
+        }
+        print!("{}", format_text(line));
+    }
     Ok(())
 }
 
-/// Render a text node to a string, normalizing internal whitespace runs
-/// (including soft line breaks) to single spaces while preserving the
-/// whitespace at the boundaries of the node.
+/// Render a single text line to a string, normalizing internal whitespace runs
+/// to single spaces while preserving the whitespace at the boundaries of the
+/// node. Soft line breaks are handled by the caller (`render_text`), which
+/// splits on newlines before calling this.
 ///
 /// Preserving the boundary whitespace keeps inline spans like **bold** or
 /// *italic* separated from adjacent text. The parser splits
@@ -404,6 +416,19 @@ fn render_paragraph(node: &Value) -> io::Result<()> {
     }
     render_children(node)?;
     println!();
+    Ok(())
+}
+
+fn render_break() -> io::Result<()> {
+    // Soft and hard line breaks: end the current line and re-apply the
+    // paragraph indent so the continuation aligns (unless inside a list item,
+    // matching render_paragraph).
+    println!();
+    if let Ok(list_stack) = LIST_STACK.lock() {
+        if list_stack.is_empty() {
+            print!("{}", get_indent());
+        }
+    }
     Ok(())
 }
 
