@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.9.2](https://github.com/guilhermeprokisch/see/compare/v0.9.1...v0.9.2) (2026-07-08)
+
+
+### Bug Fixes
+
+* preserve whitespace around inline bold/italic spans ([#82](https://github.com/guilhermeprokisch/see/issues/82)) ([#83](https://github.com/guilhermeprokisch/see/issues/83)) ([9fa7fe3](https://github.com/guilhermeprokisch/see/commit/9fa7fe3318f2c426c9a567fb08c9d689f436993e))
+* render soft and hard line breaks within paragraphs ([#84](https://github.com/guilhermeprokisch/see/issues/84)) ([#85](https://github.com/guilhermeprokisch/see/issues/85)) ([31728f2](https://github.com/guilhermeprokisch/see/commit/31728f27b059b3d9394ba08e9bf8f6129ba466dd))
+
 ## [0.9.1](https://github.com/guilhermeprokisch/see/compare/v0.9.0...v0.9.1) (2026-03-15)
 
 ### Bug Fixes
