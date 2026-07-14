@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.0](https://github.com/guilhermeprokisch/see/compare/v0.9.2...v0.10.0) (2026-07-14)
+
+
+### Features
+
+* render YAML/TOML frontmatter as a metadata header ([#88](https://github.com/guilhermeprokisch/see/issues/88)) ([a2533e6](https://github.com/guilhermeprokisch/see/commit/a2533e693248ebd0d3e9db5ce9aa3024257af254))
+
 ## [0.9.2](https://github.com/guilhermeprokisch/see/compare/v0.9.1...v0.9.2) (2026-07-08)
 
 
