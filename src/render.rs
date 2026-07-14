@@ -65,6 +65,7 @@ fn render_node(node: &Value) -> io::Result<()> {
 
     match node["type"].as_str() {
         Some("root") => render_children(node)?,
+        Some("yaml") | Some("toml") => render_frontmatter(node)?,
         Some("heading") => render_heading(node)?,
         Some("paragraph") => render_paragraph(node)?,
         Some("text") => render_text(node)?,
@@ -141,6 +142,116 @@ fn render_heading(node: &Value) -> io::Result<()> {
     }
 
     Ok(())
+}
+
+/// Render a YAML/TOML frontmatter block as a compact metadata header.
+///
+/// The parser hands us the raw block between the `---` fences. We render each
+/// flat `key: value` line as an aligned pair — keys in a muted color, and a
+/// few well-known keys (`status`, `priority`) get their value colored by
+/// meaning. Lines we can't split on `:` (nested/multiline YAML) are printed
+/// verbatim so nothing is silently dropped.
+fn render_frontmatter(node: &Value) -> io::Result<()> {
+    let config = get_config();
+    let raw = node["value"].as_str().unwrap_or("");
+    let mut stdout = get_stdout();
+
+    let entries: Vec<(&str, &str)> = raw
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        // YAML uses `key: value`; TOML frontmatter (`+++`) uses `key = value`.
+        .map(|line| match line.split_once(':').or_else(|| line.split_once('=')) {
+            Some((key, value)) => (key.trim(), value.trim()),
+            None => (line.trim(), ""),
+        })
+        .collect();
+
+    if entries.is_empty() {
+        return Ok(());
+    }
+
+    let key_width = entries
+        .iter()
+        .map(|(key, _)| key.chars().count())
+        .max()
+        .unwrap_or(0);
+
+    println!();
+    for (key, value) in &entries {
+        print!("{}", get_indent());
+
+        // Dim left gutter bar marks the block as a distinct metadata region
+        // without drawing a horizontal rule across the terminal.
+        if config.use_colors {
+            stdout.set_color(ColorSpec::new().set_dimmed(true))?;
+        }
+        print!("│ ");
+        if config.use_colors {
+            stdout.reset()?;
+        }
+
+        // Keys are dimmed (not a heading color) so metadata reads as chrome and
+        // never gets mistaken for an H1, which is bold cyan.
+        if config.use_colors {
+            stdout.set_color(ColorSpec::new().set_dimmed(true))?;
+        }
+        print!("{:<width$}", key, width = key_width);
+        if config.use_colors {
+            stdout.reset()?;
+        }
+
+        if value.is_empty() {
+            println!();
+            continue;
+        }
+
+        print!("   ");
+        let value_color = frontmatter_value_color(key, value);
+        if config.use_colors {
+            let mut spec = ColorSpec::new();
+            match value_color {
+                Some(color) => {
+                    spec.set_fg(Some(color)).set_bold(true);
+                }
+                None if key.eq_ignore_ascii_case("title") => {
+                    spec.set_bold(true);
+                }
+                None => {}
+            }
+            stdout.set_color(&spec)?;
+        }
+        print!("{}", value);
+        if config.use_colors {
+            stdout.reset()?;
+        }
+        println!();
+    }
+    println!();
+
+    Ok(())
+}
+
+/// Pick a semantic color for a few well-known frontmatter values so task-style
+/// metadata reads at a glance. Returns `None` for keys/values we don't
+/// recognize, leaving them in the default color.
+fn frontmatter_value_color(key: &str, value: &str) -> Option<Color> {
+    let normalized = value.trim().trim_matches('"').to_ascii_lowercase();
+    match key.to_ascii_lowercase().as_str() {
+        "status" => match normalized.as_str() {
+            "done" | "completed" | "complete" | "closed" => Some(Color::Green),
+            "in_progress" | "in-progress" | "doing" | "active" | "wip" => Some(Color::Blue),
+            "blocked" | "waiting" | "on_hold" | "on-hold" => Some(Color::Red),
+            "pending" | "todo" | "open" | "backlog" => Some(Color::Yellow),
+            _ => None,
+        },
+        "priority" => match normalized.as_str() {
+            "high" | "urgent" | "critical" | "p0" | "p1" => Some(Color::Red),
+            "medium" | "med" | "normal" | "p2" => Some(Color::Yellow),
+            "low" | "minor" | "p3" | "p4" => Some(Color::Green),
+            _ => None,
+        },
+        _ => None,
+    }
 }
 
 fn render_text(node: &Value) -> io::Result<()> {

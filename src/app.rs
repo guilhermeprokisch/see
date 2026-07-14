@@ -51,6 +51,10 @@ pub fn parse_and_process_markdown_with_config(
     apply_terminal_tweaks: bool,
 ) -> io::Result<Value> {
     let mut md_options = markdown::ParseOptions::gfm();
+    // Recognize YAML/TOML frontmatter so it is emitted as a dedicated node
+    // instead of being misparsed (a closing `---` otherwise turns the block
+    // into a setext heading).
+    md_options.constructs.frontmatter = true;
     if !config.render_links {
         md_options.constructs.autolink = false;
         md_options.constructs.gfm_autolink_literal = false;
