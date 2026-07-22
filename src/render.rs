@@ -345,8 +345,44 @@ fn render_code(node: &Value) -> io::Result<()> {
     Ok(())
 }
 
-fn render_table(node: &Value) -> io::Result<()> {
+/// Visible text of a table cell, applying the same inline transforms used when
+/// rendering (emoji/whitespace normalization for text, raw value for code) so
+/// column widths line up with what is actually printed. Formatting wrappers
+/// (strong/emphasis/link/…) contribute their inner text rather than being
+/// dropped.
+fn cell_display_text(node: &Value) -> String {
+    match node["type"].as_str() {
+        Some("text") => format_text(node["value"].as_str().unwrap_or("")),
+        Some("inlineCode") => node["value"].as_str().unwrap_or("").to_string(),
+        _ => {
+            let mut out = String::new();
+            if let Some(children) = node["children"].as_array() {
+                for child in children {
+                    out.push_str(&cell_display_text(child));
+                }
+            }
+            out
+        }
+    }
+}
+
+/// Render a table cell's full inline content through the normal renderers so
+/// bold/italic/code/links are preserved. The base color is re-applied before
+/// each child so plain-text segments keep the cell color even after an
+/// emphasis/strong span resets the terminal state.
+fn render_table_cell(cell: &Value, base: &ColorSpec) -> io::Result<()> {
     let mut stdout = StandardStream::stdout(ColorChoice::Always);
+    if let Some(children) = cell["children"].as_array() {
+        for child in children {
+            stdout.set_color(base)?;
+            render_node(child)?;
+        }
+    }
+    stdout.reset()?;
+    Ok(())
+}
+
+fn render_table(node: &Value) -> io::Result<()> {
     let config = get_config();
 
     if let Some(children) = node["children"].as_array() {
@@ -356,7 +392,7 @@ fn render_table(node: &Value) -> io::Result<()> {
         for row in children {
             if let Some(cells) = row["children"].as_array() {
                 for (i, cell) in cells.iter().enumerate() {
-                    let content = cell["children"][0]["value"].as_str().unwrap_or("").len();
+                    let content = cell_display_text(cell).chars().count();
                     if i >= column_widths.len() {
                         column_widths.push(content);
                     } else if content > column_widths[i] {
@@ -381,20 +417,24 @@ fn render_table(node: &Value) -> io::Result<()> {
                 }
 
                 for (j, cell) in cells.iter().enumerate() {
-                    let content = cell["children"][0]["value"].as_str().unwrap_or("");
-
-                    // Set color for header row and first column
+                    // Base color for the header row and first column.
+                    let mut base = ColorSpec::new();
                     if i == 0 {
-                        stdout
-                            .set_color(ColorSpec::new().set_fg(Some(Color::Red)).set_bold(true))?;
+                        base.set_fg(Some(Color::Red)).set_bold(true);
                     } else if j == 0 {
-                        stdout.set_color(ColorSpec::new().set_fg(Some(Color::Cyan)))?;
+                        base.set_fg(Some(Color::Cyan));
                     } else {
-                        stdout.set_color(ColorSpec::new().set_fg(Some(Color::White)))?;
+                        base.set_fg(Some(Color::White));
                     }
 
-                    print!("{:<width$}", content, width = column_widths[j]);
-                    stdout.reset()?;
+                    // Render the cell's full inline content (bold/italic/code/
+                    // links), then right-pad to the column width. Padding is
+                    // printed uncolored, which is fine since no background is set.
+                    let visible = cell_display_text(cell).chars().count();
+                    render_table_cell(cell, &base)?;
+                    for _ in visible..column_widths[j] {
+                        print!(" ");
+                    }
 
                     if config.render_table_borders {
                         if j < cells.len() - 1 {
