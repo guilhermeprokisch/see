@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.10.1](https://github.com/guilhermeprokisch/see/compare/v0.10.0...v0.10.1) (2026-07-22)
+
+
+### Bug Fixes
+
+* render inline formatting inside table cells ([#90](https://github.com/guilhermeprokisch/see/issues/90)) ([#91](https://github.com/guilhermeprokisch/see/issues/91)) ([7ff3e0a](https://github.com/guilhermeprokisch/see/commit/7ff3e0ac97a2b4b204f739730eff93e6939fc79d))
+
 ## [0.10.0](https://github.com/guilhermeprokisch/see/compare/v0.9.2...v0.10.0) (2026-07-14)
 
 
