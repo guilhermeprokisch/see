@@ -14,9 +14,6 @@ Images 🖼️ 📷 and more..
 https://github.com/user-attachments/assets/8ee492e9-950c-4dcd-a96f-62756b97fe25
 
 
-> [!WARNING]  
-> This project is currently in alpha stage. It may contain bugs, incomplete features, or undergo significant changes. Use with caution and please report any issues you encounter.\*\*
-
 see is a powerful file visualization tool for the terminal, offering advanced code viewing capabilities, Markdown rendering, and more. It provides syntax highlighting, emoji support, and image rendering capabilities, offering a visually appealing way to view various file types directly in your console.
 
 ## Features
@@ -308,11 +305,7 @@ syntax_extensions = { ino = "cpp", h = "c", templ = "html" }
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. As this project is in alpha, your input and contributions can significantly shape its development.
-
-## Known Issues
-
-As this is an alpha version, you may encounter bugs or incomplete features.
+Contributions are welcome! Please feel free to submit a Pull Request. Your input and contributions can significantly shape its development.
 
 ## Tradeoff
 
